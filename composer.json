@@ -1,0 +1,20 @@
+{
+	"name": "yjv/http-request",
+	"description": "library with classes that allow easy sending of http requests.",
+	"license": "MIT",
+	"require": {
+	    
+	    "php": ">=5.3.0",
+	    "symfony/event-dispatcher": "~2.0",
+	    "guzzle/guzzle": "*"
+	},
+	"require-dev":{
+	    "mockery/mockery": "@dev"
+	},
+	"autoload": {
+	    "psr-0": {
+	        "Yjv\\HttpRequest": ""
+	    }
+	},
+	"target-dir": "Yjv/HttpRequest"
+}

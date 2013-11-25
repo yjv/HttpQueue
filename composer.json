@@ -1,20 +1,22 @@
 {
-	"name": "yjv/http-request",
+	"name": "yjv/http-queue",
 	"description": "library with classes that allow easy sending of http requests.",
 	"license": "MIT",
 	"require": {
 	    
 	    "php": ">=5.3.0",
-	    "symfony/event-dispatcher": "~2.0",
-	    "guzzle/guzzle": "*"
+        "symfony/event-dispatcher": "~2.0",
+        "symfony/http-foundation": "~2.0",
+        "guzzle/guzzle": "*",
+        "guzzle/stream": "~3.7"
 	},
 	"require-dev":{
 	    "mockery/mockery": "@dev"
 	},
 	"autoload": {
 	    "psr-0": {
-	        "Yjv\\HttpRequest": ""
+	        "Yjv\\HttpQueue": ""
 	    }
 	},
-	"target-dir": "Yjv/HttpRequest"
+	"target-dir": "Yjv/HttpQueue"
 }

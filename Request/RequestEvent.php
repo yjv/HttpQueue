@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpRequest\Request;
+namespace Yjv\HttpQueue\Request;
 
 use Symfony\Component\EventDispatcher\Event;
 
@@ -9,21 +9,21 @@ class RequestEvent extends Event
     protected $request;
     protected $response;
     
-    public function __construct(RequestInterface $request, QueueInterface $queue, ResponseInterface $response = null)
+    public function __construct(QueueInterface $queue, RequestInterface $request, ResponseInterface $response = null)
     {
-        $this->request = $request;
         $this->queue = $queue;
+        $this->request = $request;
         $this->response = $response;
-    }
-    
-    public function getRequest()
-    {
-        return $this->request;
     }
     
     public function getQueue()
     {
         return $this->queue;
+    }
+    
+    public function getRequest()
+    {
+        return $this->request;
     }
     
     public function getResponse()

@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpRequest\Queue;
+namespace Yjv\HttpQueue\Queue;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 

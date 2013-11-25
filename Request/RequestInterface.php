@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpRequest\Request;
+namespace Yjv\HttpQueue\Request;
 
 interface RequestInterface
 {

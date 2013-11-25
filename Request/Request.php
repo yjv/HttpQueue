@@ -1,26 +1,32 @@
 <?php
-namespace Yjv\HttpRequest\Request;
+namespace Yjv\HttpQueue\Request;
+
+use Symfony\Component\HttpFoundation\HeaderBag;
 
 class Request implements RequestInterface
 {
     protected $curlOptions = array();
     protected $url;
     protected $method;
+    protected $headers;
+    protected $method;
     
-    public function __construct($url, $method = RequestInterface::METHOD_GET)
+    public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), $body = '')
     {
         $this->setUrl($url);
         $this->setMethod($method);
+        $this->setHeaders($headers);
     }
     
     public function getHandle()
     {
         $handle = curl_init();
         
-        foreach ($this->curlOptions as $name => $value) {
-            
-            curl_setopt($handle, $name, $value);
-        }
+        $curlOptions = $this->curlOptions;
+        $curlOptions[CURLOPT_HTTPHEADER] = $this->headers->allPreserveCase();
+        $curlOptions[CURLOPT_COOKIE] = $this->headers->getCookies(RequestHeaderBag::COOKIES_STRING);
+        
+        curl_setopt_array($handle, $curlOptions);
         
         return $handle;
     }
@@ -58,5 +64,16 @@ class Request implements RequestInterface
     public function getMethod()
     {
         return $this->method;
+    }
+    
+    public function setHeaders($headers)
+    {
+        $this->headers = $headers instanceof RequestHeaderBag ? $headers : new RequestHeaderBag($headers);
+        return $this;
+    }
+    
+    public function getHeaders()
+    {
+        return $this->headers;
     }
 }

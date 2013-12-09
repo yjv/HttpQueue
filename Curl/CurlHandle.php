@@ -38,7 +38,9 @@ class CurlHandle implements CurlHandleInterface
     
     public function setOption($name, $value)
     {
-        $this->setOptions(array($name => $value));
+        $this->options[$name] = $value;
+        $wrappedCallbacks = $this->wrapCallbacks(array($name => $value));
+        curl_setopt($this->resource, $name, $wrappedCallbacks[$name]);
         return $this;
     }
     
@@ -71,9 +73,13 @@ class CurlHandle implements CurlHandleInterface
             CURLOPT_WRITEFUNCTION,
             CURLOPT_READFUNCTION,
             CURLOPT_HEADERFUNCTION,
-//             CURLOPT_PASSWDFUNCTION,
             CURLOPT_PROGRESSFUNCTION
         );
+        
+        if (defined('CURLOPT_PASSWDFUNCTION')) {
+            
+            $callbackFunctions[] = CURLOPT_PASSWDFUNCTION;
+        }
         
         foreach ($callbackFunctions as $callbackFunction) {
             

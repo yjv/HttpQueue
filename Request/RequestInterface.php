@@ -1,14 +1,11 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-interface RequestInterface
+use Yjv\HttpQueue\Curl\CurlHandleFactoryInterface;
+
+interface RequestInterface extends CurlHandleFactoryInterface
 {
     const METHOD_GET = 'GET';
     const METHOD_POST = 'POST';
     const METHOD_HEAD = 'HEAD';
-    
-    /**
-     * @return a curl handle this method should idempotent and return a new handle each time it's called
-     */
-    public function getHandle();
 }

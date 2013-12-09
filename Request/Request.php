@@ -30,7 +30,7 @@ class Request implements RequestInterface
         $this->setHeaders($headers);
     }
     
-    public function getHandle()
+    public function createHandle()
     {
         $handle = new CurlHandle();
         $curlOptions = $this->curlOptions;

@@ -69,7 +69,7 @@ class CurlHandle implements CurlHandleInterface
     {
         $curlObject = $this;
         
-        $callbackFunctions = array(
+        $callbackOptions = array(
             CURLOPT_WRITEFUNCTION,
             CURLOPT_READFUNCTION,
             CURLOPT_HEADERFUNCTION,
@@ -78,15 +78,15 @@ class CurlHandle implements CurlHandleInterface
         
         if (defined('CURLOPT_PASSWDFUNCTION')) {
             
-            $callbackFunctions[] = CURLOPT_PASSWDFUNCTION;
+            $callbackOptions[] = CURLOPT_PASSWDFUNCTION;
         }
         
-        foreach ($callbackFunctions as $callbackFunction) {
+        foreach ($callbackOptions as $callbackOption) {
             
-            if (isset($options[$callbackFunction])) {
+            if (isset($options[$callbackOption])) {
                 
-                $internalFunction = $options[$callbackFunction];
-                $options[$callbackFunction] = function() use ($internalFunction, $curlObject)
+                $internalFunction = $options[$callbackOption];
+                $options[$callbackOption] = function() use ($internalFunction, $curlObject)
                 {
                     $args = func_get_args();
                     $args[0] = $curlObject;

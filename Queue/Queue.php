@@ -79,7 +79,7 @@ class Queue implements QueueInterface
         foreach ($this->pending as $pending) {
             
             $this->sending->attach($pending);
-            $handle = $pending->getHandle()
+            $handle = $pending->createHandle()
                 ->setOption(CURLOPT_WRITEFUNCTION, array($this, 'writeResponseBody'))
                 ->setOption(CURLOPT_HEADERFUNCTION, array($this, 'receiveResponseHeader'))
             ;

@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
+use Symfony\Component\HttpFoundation\HeaderBag;
+
 use Symfony\Component\HttpFoundation\Cookie;
 
 class RequestHeaderBag extends HeaderBag

@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Request\RequestInterface;
+
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 interface QueueInterface

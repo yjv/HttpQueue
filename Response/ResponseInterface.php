@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpQueue;
+namespace Yjv\HttpQueue\Response;
 
 interface ResponseInterface
 {

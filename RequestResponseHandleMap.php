@@ -1,42 +1,77 @@
 <?php
 namespace Yjv\HttpQueue;
 
+use Yjv\HttpQueue\Curl\CurlHandleInterface;
+
+use Yjv\HttpQueue\Response\ResponseInterface;
+
 use Yjv\HttpQueue\Request\RequestInterface;
 
 class RequestResponseHandleMap
 {
-    protected $requests = array();
-    protected $responses = array();
+    protected $requests;
+    protected $responses;
+    
+    public function __construct()
+    {
+        $this->requests = new \SplObjectStorage();
+        $this->responses = new \SplObjectStorage();
+    }
     
     /**
      * 
-     * @param resource $handle curl handle
+     * @param CurlHandle $handle curl handle
      * @return \Yjv\HttpQueue\Request\RequestInterface
      */
-    public function getRequest($handle)
+    public function getRequest(CurlHandleInterface $handle)
     {
-        return $this->requests[(int)$handle];
+        return isset($this->requests[$handle]) ? $this->requests[$handle] : null;
     }
     
-    public function setRequest($handle, RequestInterface $request)
+    public function setRequest(CurlHandleInterface $handle, RequestInterface $request)
     {
-        $this->requests[(int)$handle] = $request;
+        $this->requests[$handle] = $request;
         return $this;
     }
     
     /**
      * 
-     * @param resource $handle curl handle
+     * @param CurlHandle $handle curl handle
      * @return \Yjv\HttpQueue\Response\ResponseInterface
      */
-    public function getResponse($handle)
+    public function getResponse(CurlHandleInterface $handle)
     {
-        return $this->responses[(int)$handle];
+        return isset($this->responses[$handle]) ? $this->responses[$handle] : null;
     }
     
-    public function setResponse($handle, ResponseInterface $response)
+    /**
+     * 
+     * @param CurlHandle $handle
+     * @param ResponseInterface $response
+     * @return \Yjv\HttpQueue\RequestResponseHandleMap
+     */
+    public function setResponse(CurlHandleInterface $handle, ResponseInterface $response)
     {
-        $this->responses[(int)$handle] = $response;
+        $this->responses[$handle] = $response;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @param CurlHandle $handle
+     * @return \Yjv\HttpQueue\RequestResponseHandleMap
+     */
+    public function clear(CurlHandleInterface $handle = null)
+    {
+        if ($handle) {
+            
+            unset($this->requests[$handle], $this->responses[$handle]);
+        } else {
+            
+            $this->requests->removeAll($this->requests);
+            $this->responses->removeAll($this->responses);
+        }
+        
         return $this;
     }
 }

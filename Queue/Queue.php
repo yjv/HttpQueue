@@ -1,6 +1,14 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Curl\CurlHandleInterface;
+
+use Yjv\HttpQueue\Curl\CurlMultiInterface;
+
+use Yjv\HttpQueue\Curl\CurlMultiException;
+
+use Yjv\HttpQueue\Curl\CurlMulti;
+
 use Yjv\HttpQueue\Response\Response;
 
 use Yjv\HttpQueue\RequestResponseHandleMap;
@@ -21,29 +29,30 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Queue implements QueueInterface
 {
+    protected static $multiErrors = array(
+        CURLM_BAD_HANDLE      => array('CURLM_BAD_HANDLE', 'The passed-in handle is not a valid CURLM handle.'),
+        CURLM_BAD_EASY_HANDLE => array('CURLM_BAD_EASY_HANDLE', "An easy handle was not good/valid. It could mean that it isn't an easy handle at all, or possibly that the handle already is in used by this or another multi handle."),
+        CURLM_OUT_OF_MEMORY   => array('CURLM_OUT_OF_MEMORY', 'You are doomed.'),
+        CURLM_INTERNAL_ERROR  => array('CURLM_INTERNAL_ERROR', 'This can only be returned if libcurl bugs. Please report it to us!')
+    );
     protected $pending;
     protected $sending;
-    protected $finished;
     protected $responses;
     protected $handleMap;
     protected $curlMulti;
     protected $dispatcher;
     protected $sendCalls = 0;
     
-    public function __construct(EventDispatcherInterface $dispatcher = null)
-    {
+    public function __construct(
+        CurlMultiInterface $curlMulti = null, 
+        EventDispatcherInterface $dispatcher = null
+    ) {
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
         $this->handleMap = new RequestResponseHandleMap();
         $this->pending = new \SplObjectStorage();
         $this->sending = new \SplObjectStorage();
-        $this->finished = new \SplObjectStorage();
         $this->responses = new \SplObjectStorage();
-        $this->curlMulti = curl_multi_init();
-    }
-    
-    public function __destruct()
-    {
-        curl_multi_close($this->curlMulti);
+        $this->curlMulti = $curlMulti ?: new CurlMulti();
     }
     
     public function queue(RequestInterface $request)
@@ -69,12 +78,17 @@ class Queue implements QueueInterface
         
         foreach ($this->pending as $pending) {
             
-            $this->pending->detach($pending);
             $this->sending->attach($pending);
-            $handle = $pending->getHandle();
+            $handle = $pending->getHandle()
+                ->setOption(CURLOPT_WRITEFUNCTION, array($this, 'writeResponseBody'))
+                ->setOption(CURLOPT_HEADERFUNCTION, array($this, 'receiveResponseHeader'))
+            ;
+            
             $this->handleMap->setRequest($handle, $pending);
-            curl_multi_add_handle($this->curlMulti, $handle);
+            $this->curlMulti->addHandle($handle);
         }
+        
+        $this->pending->removeAll($this->pending);
         
         $this->executeHandles();   
 
@@ -82,7 +96,9 @@ class Queue implements QueueInterface
         
         if (!$this->sendCalls) {
             
-            return $this->finished;
+            $responses = iterator_to_array($this->responses);
+            $this->responses->removeAll($this->responses);
+            return $responses;
         }
     }
     
@@ -111,7 +127,7 @@ class Queue implements QueueInterface
      *
      * @return int
      */
-    public function receiveResponseHeader($handle, $header)
+    public function receiveResponseHeader(CurlHandleInterface $handle, $header)
     {
         static $normalize = array("\r", "\n");
         $length = strlen($header);
@@ -123,25 +139,15 @@ class Queue implements QueueInterface
             $code = $startLine[1];
             $status = isset($startLine[2]) ? $startLine[2] : '';
     
-            // Only download the body of the response to the specified response
-            // body when a successful response is received.
-            if ($code >= 200 && $code < 300) {
-                $body = $this->request->getResponseBody();
-            } else {
-                $body = EntityBody::factory();
-            }
-    
-            $response = new Response($code, array(), $body);
+            $response = new Response($code, array());
             $this->handleMap->setResponse($handle, $response);
-            $response->setStatus($code, $status);
-            $this->request->startResponse($response);
     
-            $this->dispatcher->dispatch(RequestEvents::RECEIVE_STATUS_LINE, array(
-                    'request'       => $this,
-                    'line'          => $header,
-                    'status_code'   => $code,
-                    'reason_phrase' => $status
-            ));
+//             $this->dispatcher->dispatch(RequestEvents::RECEIVE_STATUS_LINE, array(
+//                     'request'       => $this,
+//                     'line'          => $header,
+//                     'status_code'   => $code,
+//                     'reason_phrase' => $status
+//             ));
     
         } elseif ($pos = strpos($header, ':')) {
             $response = $this->handleMap->getResponse($handle);
@@ -186,6 +192,7 @@ class Queue implements QueueInterface
      */
     public function writeResponseBody($curl, $write)
     {
+        return strlen($write);
         if ($this->emitIo) {
             $this->request->dispatch('curl.callback.write', array(
                     'request' => $this->request,
@@ -210,7 +217,7 @@ class Queue implements QueueInterface
      *
      * @return string
      */
-    public function readRequestBody($ch, $fd, $length)
+    public function readRequestBody(CurlHandleInterface $handle, $fd, $length)
     {
         if (!($body = $this->request->getBody())) {
             return '';
@@ -224,7 +231,7 @@ class Queue implements QueueInterface
         return $read;
     }
     
-    public function getResposnes(RequestInterface $request)
+    public function getResponse(RequestInterface $request)
     {
         if (!isset($this->responses[$request])) {
             
@@ -243,10 +250,10 @@ class Queue implements QueueInterface
         $selectTimeout = 0.001;
         $active = false;
         do {
-            while (($mrc = curl_multi_exec($this->curlMulti, $active)) == CURLM_CALL_MULTI_PERFORM);
+            while (($mrc = $this->curlMulti->execute($active)) == CurlMultiInterface::STATUS_PERFORMING);
             $this->checkCurlResult($mrc);
             $this->processResults();
-            if ($active && curl_multi_select($this->curlMulti, $selectTimeout) === -1) {
+            if ($active && $this->curlMulti->select($selectTimeout) === -1) {
                 // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
                 usleep(150);
             }
@@ -262,13 +269,9 @@ class Queue implements QueueInterface
      */
     protected function checkCurlResult($code)
     {
-        $multiErrors = CurlMultiInterface::MULTI_ERRORS;
-    
-        if ($code != CurlMultiInterface::CURL_STATUS_OK && $code != CURLM_CALL_MULTI_PERFORM) {
-            throw new CurlException(isset($multiErrors[$code])
-                    ? "cURL error: {$code} ({$multiErrors[$code][0]}): cURL message: {$multiErrors[$code][1]}"
-                    : 'Unexpected cURL error: ' . $code
-            );
+        if ($code != CurlMultiInterface::STATUS_OK && $code != CurlMultiInterface::STATUS_PERFORMING) {
+            
+            throw new CurlMultiException($code);
         }
     }
     
@@ -277,31 +280,26 @@ class Queue implements QueueInterface
     */
     protected function processResults()
     {
-        while ($done = curl_multi_info_read($this->curlMulti)) {
-            $handle = $done['handle'];
-            $result = $info['result'];
+        while ($done = $this->curlMulti->getFinishedHandleInformation()) {
+
+            $handle = $done->getHandle();
+            $this->curlMulti->removeHandle($handle);
+            $handle->close();
+            $request = $this->handleMap->getRequest($handle);
+            $response = $this->handleMap->getResponse($handle);
+            
+            $event = new RequestEvent($this, $request, $response);
     
-            curl_multi_remove_handle($this->curlMulti, $handle);
-    
-            $event = new RequestEvent($this, $this->handleRequestHash[(int)$handle]);
-    
-            if ($result !== CurlMultiInterface::CURL_STATUS_OK) {
+            if ($done->getResult() !== CurlMultiInterface::STATUS_OK) {
         
                 $this->dispatcher->dispatch(RequestEvents::ERROR, $event);
             }
     
             $this->dispatcher->dispatch(RequestEvents::COMPLETE, $event);
             
+            $this->sending->detach($request);
+            $this->responses->attach($response);
+            $this->handleMap->clear($handle);
         }
-    }
-    
-    protected function addResponse(RequestInterface $request, ResponseInterface $response)
-    {
-        if (!is_array($this->responses[$request])) {
-            
-            $this->responses[$request] = array();
-        }
-        
-        $this->resposnes[$request][] = $response;
     }
 }

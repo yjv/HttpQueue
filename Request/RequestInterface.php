@@ -8,4 +8,6 @@ interface RequestInterface extends CurlHandleFactoryInterface
     const METHOD_GET = 'GET';
     const METHOD_POST = 'POST';
     const METHOD_HEAD = 'HEAD';
+    
+    public function setRequestMediator(RequestMediatorInterface $requestMediator);
 }

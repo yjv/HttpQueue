@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
+use Yjv\HttpQueue\Url\Url;
+
 use Yjv\HttpQueue\Curl\CurlHandle;
 
 use Symfony\Component\HttpFoundation\HeaderBag;
@@ -12,6 +14,7 @@ class Request implements RequestInterface
     protected $method;
     protected $headers;
     protected $body;
+    protected $requestMediator;
     
     public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), $body = '')
     {
@@ -24,7 +27,6 @@ class Request implements RequestInterface
                 // Certificate must indicate that the server is the server to which you meant to connect
                 CURLOPT_SSL_VERIFYHOST => 2
         );
-        $this->setPort(80);
         $this->setUrl($url);
         $this->setMethod($method);
         $this->setHeaders($headers);
@@ -164,6 +166,11 @@ class Request implements RequestInterface
     
     public function setUrl($url)
     {
+        if (is_string($url)) {
+            
+            $url = Url::createFromString($url);
+        }
+        
         $this->url = $url;
         $this->setCurlOption(CURLOPT_URL, $url);
         return $this;
@@ -202,15 +209,9 @@ class Request implements RequestInterface
         return $this->headers;
     }
     
-    public function setPort($port)
+    public function setRequestMediator(RequestMediatorInterface $requestMediator)
     {
-        $this->port = $port;
-        $this->setCurlOption(CURLOPT_PORT, $port);
+        $this->requestMediator = $requestMediator;
         return $this;
-    }
-    
-    public function getPort()
-    {
-        return $this->port;
     }
 }

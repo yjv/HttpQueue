@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Request\RequestMediatorInterface;
+
 use Yjv\HttpQueue\Curl\CurlHandleInterface;
 
 use Yjv\HttpQueue\Curl\CurlMultiInterface;
@@ -27,7 +29,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class Queue implements QueueInterface
+class Queue implements QueueInterface, RequestMediatorInterface
 {
     protected static $multiErrors = array(
         CURLM_BAD_HANDLE      => array('CURLM_BAD_HANDLE', 'The passed-in handle is not a valid CURLM handle.'),
@@ -160,17 +162,12 @@ class Queue implements QueueInterface
     
         return $length;
     }
-    
+
     /**
-     * Received a progress notification
-     *
-     * @param int        $downloadSize Total download size
-     * @param int        $downloaded   Amount of bytes downloaded
-     * @param int        $uploadSize   Total upload size
-     * @param int        $uploaded     Amount of bytes uploaded
-     * @param resource   $handle       CurlHandle object
+     * 
+     * @see RequestMediatorInterface::progress
      */
-    public function progress($downloadSize, $downloaded, $uploadSize, $uploaded, $handle = null)
+    public function progress(CurlHandleInterface $handle, $totalDownloadSize, $amountDownloaded, $totalUploadSize, $amountUploaded)
     {
         $this->request->dispatch('curl.callback.progress', array(
                 'request'       => $this->request,
@@ -183,12 +180,8 @@ class Queue implements QueueInterface
     }
     
     /**
-     * Write data to the response body of a request
-     *
-     * @param resource $curl  Curl handle
-     * @param string   $write Data that was received
-     *
-     * @return int
+     * 
+     * @see RequestMediatorInterface::writeResponseBody
      */
     public function writeResponseBody($curl, $write)
     {
@@ -209,15 +202,10 @@ class Queue implements QueueInterface
     }
     
     /**
-     * Read data from the request body and send it to curl
-     *
-     * @param resource $ch     Curl handle
-     * @param resource $fd     File descriptor
-     * @param int      $length Amount of data to read
-     *
-     * @return string
+     * 
+     * @see RequestMediatorInterface::readRequestBody
      */
-    public function readRequestBody(CurlHandleInterface $handle, $fd, $length)
+    public function readRequestBody(CurlHandleInterface $handle, $fileDescriptor, $lengthOfDataRead)
     {
         if (!($body = $this->request->getBody())) {
             return '';

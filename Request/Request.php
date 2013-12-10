@@ -172,7 +172,7 @@ class Request implements RequestInterface
         }
         
         $this->url = $url;
-        $this->setCurlOption(CURLOPT_URL, $url);
+        $this->setCurlOption(CURLOPT_URL, (string)$url);
         return $this;
     }
     

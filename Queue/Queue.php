@@ -83,7 +83,7 @@ class Queue implements QueueInterface, RequestMediatorInterface
             $this->sending->attach($pending);
             $handle = $pending->createHandle()
                 ->setOption(CURLOPT_WRITEFUNCTION, array($this, 'writeResponseBody'))
-                ->setOption(CURLOPT_HEADERFUNCTION, array($this, 'receiveResponseHeader'))
+                ->setOption(CURLOPT_HEADERFUNCTION, array($this, 'writeResponseHeader'))
             ;
             
             $this->handleMap->setRequest($handle, $pending);
@@ -129,7 +129,7 @@ class Queue implements QueueInterface, RequestMediatorInterface
      *
      * @return int
      */
-    public function receiveResponseHeader(CurlHandleInterface $handle, $header)
+    public function writeResponseHeader(CurlHandleInterface $handle, $header)
     {
         static $normalize = array("\r", "\n");
         $length = strlen($header);
@@ -183,7 +183,7 @@ class Queue implements QueueInterface, RequestMediatorInterface
      * 
      * @see RequestMediatorInterface::writeResponseBody
      */
-    public function writeResponseBody($curl, $write)
+    public function writeResponseBody(CurlHandleInterface $handle, $data)
     {
         return strlen($write);
         if ($this->emitIo) {

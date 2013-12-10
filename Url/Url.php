@@ -14,7 +14,7 @@ class Url
     
     public static function createFromString($urlString)
     {
-        $url = parse_url($url);
+        $url = parse_url($urlString);
         return new static(
             isset($url['scheme']) ? $url['scheme'] : '',
             isset($url['port']) ? $url['port'] : '',

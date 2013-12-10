@@ -185,11 +185,11 @@ class Queue implements QueueInterface, RequestMediatorInterface
      */
     public function writeResponseBody(CurlHandleInterface $handle, $data)
     {
-        return strlen($write);
+        return strlen($data);
         if ($this->emitIo) {
             $this->request->dispatch('curl.callback.write', array(
                     'request' => $this->request,
-                    'write'   => $write
+                    'write'   => $data
             ));
         }
     

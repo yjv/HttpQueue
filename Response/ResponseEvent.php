@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Response;
 
+use Yjv\HttpQueue\Request\RequestInterface;
+
 use Yjv\HttpQueue\Request\RequestEvent;
 
 use Yjv\HttpQueue\Response\ResponseInterface;

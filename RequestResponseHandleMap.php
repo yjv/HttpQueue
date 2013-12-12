@@ -20,7 +20,7 @@ class RequestResponseHandleMap
     
     /**
      * 
-     * @param CurlHandle $handle curl handle
+     * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\Request\RequestInterface
      */
     public function getRequest(CurlHandleInterface $handle)
@@ -28,6 +28,28 @@ class RequestResponseHandleMap
         return isset($this->requests[$handle]) ? $this->requests[$handle] : null;
     }
     
+    /**
+     * 
+     * @return array
+     */
+    public function getRequests()
+    {
+        $requests = array();
+        
+        foreach ($this->requests as $handle) {
+            
+            $requests[] = $this->requests[$handle];
+        }
+        
+        return $requests;
+    }
+    
+    /**
+     * 
+     * @param CurlHandleInterface $handle
+     * @param RequestInterface $request
+     * @return \Yjv\HttpQueue\RequestResponseHandleMap
+     */
     public function setRequest(CurlHandleInterface $handle, RequestInterface $request)
     {
         $this->requests[$handle] = $request;
@@ -36,17 +58,33 @@ class RequestResponseHandleMap
     
     /**
      * 
-     * @param CurlHandle $handle curl handle
+     * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\Response\ResponseInterface
      */
     public function getResponse(CurlHandleInterface $handle)
     {
         return isset($this->responses[$handle]) ? $this->responses[$handle] : null;
     }
+
+    /**
+     * 
+     * @return array
+     */
+    public function getResponses()
+    {
+        $responses = array();
+    
+        foreach ($this->responses as $handle) {
+    
+            $requests[] = $this->responses[$handle];
+        }
+    
+        return $responses;
+    }    
     
     /**
      * 
-     * @param CurlHandle $handle
+     * @param CurlHandleInterface $handle
      * @param ResponseInterface $response
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
@@ -58,7 +96,7 @@ class RequestResponseHandleMap
     
     /**
      * 
-     * @param CurlHandle $handle
+     * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
     public function clear(CurlHandleInterface $handle = null)

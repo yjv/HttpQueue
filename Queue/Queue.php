@@ -33,14 +33,8 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class Queue implements QueueInterface, RequestMediatorInterface
+class Queue implements QueueInterface
 {
-    protected static $multiErrors = array(
-        CURLM_BAD_HANDLE      => array('CURLM_BAD_HANDLE', 'The passed-in handle is not a valid CURLM handle.'),
-        CURLM_BAD_EASY_HANDLE => array('CURLM_BAD_EASY_HANDLE', "An easy handle was not good/valid. It could mean that it isn't an easy handle at all, or possibly that the handle already is in used by this or another multi handle."),
-        CURLM_OUT_OF_MEMORY   => array('CURLM_OUT_OF_MEMORY', 'You are doomed.'),
-        CURLM_INTERNAL_ERROR  => array('CURLM_INTERNAL_ERROR', 'This can only be returned if libcurl bugs. Please report it to us!')
-    );
     protected $pending;
     protected $responses;
     protected $handleMap;
@@ -61,6 +55,8 @@ class Queue implements QueueInterface, RequestMediatorInterface
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
         $this->requestMediator = $requestMediator ?: new RequestMediator();
         $this->requestMediator->setHandleMap($this->handleMap);
+        $this->requestMediator->setDispatcher($this->dispatcher);
+        $this->requestMediator->setQueue($this);
     }
     
     public function queue(RequestInterface $request)
@@ -128,10 +124,9 @@ class Queue implements QueueInterface, RequestMediatorInterface
     {
         foreach ($this->pending as $pending) {
             
-            $this->sending->attach($pending);
             $handle = $pending->createHandle($this->requestMediator)
-                ->setOption(CURLOPT_WRITEFUNCTION, array($this, 'writeResponseBody'))
-                ->setOption(CURLOPT_HEADERFUNCTION, array($this, 'writeResponseHeader'))
+                ->setOption(CURLOPT_WRITEFUNCTION, array($this->requestMediator, 'writeResponseBody'))
+                ->setOption(CURLOPT_HEADERFUNCTION, array($this->requestMediator, 'writeResponseHeader'))
             ;
             
             $this->handleMap->setRequest($handle, $pending);
@@ -149,8 +144,8 @@ class Queue implements QueueInterface, RequestMediatorInterface
         $selectTimeout = 0.001;
         $active = false;
         do {
-            while (($mrc = $this->curlMulti->execute($active)) == CurlMultiInterface::STATUS_PERFORMING);
-            $this->checkCurlResult($mrc);
+            while ($this->checkCurlMultiExecuteResult($this->curlMulti->execute($active)));
+            
             $this->processResults();
             if ($active && $this->curlMulti->select($selectTimeout) === -1) {
                 // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
@@ -166,16 +161,23 @@ class Queue implements QueueInterface, RequestMediatorInterface
      * @param int $code Curl response code
      * @throws CurlException
      */
-    protected function checkCurlResult($code)
+    protected function checkCurlMultiExecuteResult($executeResultCode)
     {
-        if ($code != CurlMultiInterface::STATUS_OK && $code != CurlMultiInterface::STATUS_PERFORMING) {
+        if ($executeResultCode == CurlMultiInterface::STATUS_PERFORMING) {
             
-            throw new CurlMultiException($code);
+            return true;
         }
+        
+        if ($executeResultCode == CurlMultiInterface::STATUS_OK) {
+            
+            return false;
+        }
+        
+        throw new CurlMultiException($executeResultCode);
     }
     
    /**
-    * Process any received curl multi messages
+    * Process any received finished requests
     */
     protected function processResults()
     {
@@ -191,12 +193,16 @@ class Queue implements QueueInterface, RequestMediatorInterface
     
             if ($done->getResult() !== CurlMultiInterface::STATUS_OK) {
         
-                $this->dispatcher->dispatch(RequestEvents::ERROR, $event);
+                $this->dispatcher->dispatch(RequestEvents::CURL_ERROR, $event);
             }
     
             $this->dispatcher->dispatch(RequestEvents::COMPLETE, $event);
             
-            $this->responses->attach($response);
+            if ($response) {
+
+                $this->responses->attach($response);
+            }
+            
             $this->handleMap->clear($handle);
         }
     }

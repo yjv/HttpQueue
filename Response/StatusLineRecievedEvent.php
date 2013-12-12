@@ -5,7 +5,7 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Queue\QueueInterface;
 
-class RecieveStatusLineEvent extends ResponseEvent
+class StatusLineRecievedEvent extends ResponseEvent
 {
     protected $code;
     protected $phrase;

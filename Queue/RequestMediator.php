@@ -1,6 +1,16 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Response\HeaderRecievedEvent;
+
+use Yjv\HttpQueue\Response\StatusLineRecievedEvent;
+
+use Yjv\HttpQueue\Response\ResponseEvents;
+
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+use Yjv\HttpQueue\Response\Response;
+
 use Yjv\HttpQueue\RequestResponseHandleMap;
 
 use Yjv\HttpQueue\Curl\CurlHandleInterface;
@@ -8,6 +18,8 @@ use Yjv\HttpQueue\Curl\CurlHandleInterface;
 class RequestMediator implements RequestMediatorInterface
 {
     protected $handleMap;
+    protected $dispatcher;
+    protected $queue;
 
     /**
      * Receive a response header from curl
@@ -22,6 +34,13 @@ class RequestMediator implements RequestMediatorInterface
         static $normalize = array("\r", "\n");
         $length = strlen($header);
         $header = str_replace($normalize, '', $header);
+        
+        if (!$header) {
+            
+            return;
+        }
+        
+        $request = $this->handleMap->getRequest($handle);
     
         if (strpos($header, 'HTTP/') === 0) {
     
@@ -34,7 +53,7 @@ class RequestMediator implements RequestMediatorInterface
     
             $this->dispatcher->dispatch(
                 ResponseEvents::RECEIVE_STATUS_LINE, 
-                new RecieveStatusLineEvent($this, $request, $response, $code, $status)
+                new StatusLineRecievedEvent($this->queue, $request, $response, $code, $status)
             );
     
         } elseif ($pos = strpos($header, ':')) {
@@ -45,8 +64,8 @@ class RequestMediator implements RequestMediatorInterface
                     false
             );
         }
-    
-        $this->dispatcher->dispatch(ResponseEvents::WRITE_HEADER, new re);
+        
+        $this->dispatcher->dispatch(ResponseEvents::WRITE_HEADER, new HeaderRecievedEvent($this->queue, $request, $response, $header));
     
         return $length;
     }
@@ -110,6 +129,18 @@ class RequestMediator implements RequestMediatorInterface
     public function setHandleMap(RequestResponseHandleMap $handleMap)
     {
         $this->handleMap = $handleMap;
+        return $this;
+    }
+    
+    public function setDispatcher(EventDispatcherInterface $dispatcher)
+    {
+        $this->dispatcher = $dispatcher;
+        return $this;
+    }
+    
+    public function setQueue(QueueInterface $queue)
+    {
+        $this->queue = $queue;
         return $this;
     }
 }

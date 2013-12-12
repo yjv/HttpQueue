@@ -11,13 +11,11 @@ class RequestEvent extends Event
 {
     protected $queue;
     protected $request;
-    protected $response;
     
-    public function __construct(QueueInterface $queue, RequestInterface $request, ResponseInterface $response = null)
+    public function __construct(QueueInterface $queue, RequestInterface $request)
     {
         $this->queue = $queue;
         $this->request = $request;
-        $this->response = $response;
     }
     
     public function getQueue()
@@ -28,10 +26,5 @@ class RequestEvent extends Event
     public function getRequest()
     {
         return $this->request;
-    }
-    
-    public function getResponse()
-    {
-        return $this->response;
     }
 }

@@ -13,4 +13,5 @@ interface QueueInterface
     public function getCurlMulti();
     public function addEventListener($eventName, $listener, $priority = 0);
     public function addEventSubscriber(EventSubscriberInterface $subscriber);
+    public function getHandleMap();
 }

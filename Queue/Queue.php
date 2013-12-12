@@ -54,7 +54,6 @@ class Queue implements QueueInterface
         $this->curlMulti = $curlMulti ?: new CurlMulti();
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
         $this->requestMediator = $requestMediator ?: new RequestMediator();
-        $this->requestMediator->setHandleMap($this->handleMap);
         $this->requestMediator->setDispatcher($this->dispatcher);
         $this->requestMediator->setQueue($this);
     }
@@ -118,6 +117,11 @@ class Queue implements QueueInterface
         }
         
         return $this->responses[$request];
+    }
+    
+    public function getHandleMap()
+    {
+        return $this->handleMap;
     }
 
     protected function queuePendingRequests()

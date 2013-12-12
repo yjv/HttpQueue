@@ -41,7 +41,6 @@ interface RequestMediatorInterface
      */
     public function writeResponseBody(CurlHandleInterface $handle, $data);
     
-    public function setHandleMap(RequestResponseHandleMap $handleMap);
     public function setDispatcher(EventDispatcherInterface $dispatcher);
     public function setQueue(QueueInterface $queue);
 }

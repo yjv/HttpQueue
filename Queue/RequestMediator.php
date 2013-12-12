@@ -1,6 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Request\RequestProgressEvent;
+
+use Yjv\HttpQueue\Request\RequestEvents;
+
 use Yjv\HttpQueue\Response\HeaderRecievedEvent;
 
 use Yjv\HttpQueue\Response\StatusLineRecievedEvent;
@@ -17,7 +21,6 @@ use Yjv\HttpQueue\Curl\CurlHandleInterface;
 
 class RequestMediator implements RequestMediatorInterface
 {
-    protected $handleMap;
     protected $dispatcher;
     protected $queue;
 
@@ -40,7 +43,7 @@ class RequestMediator implements RequestMediatorInterface
             return;
         }
         
-        $request = $this->handleMap->getRequest($handle);
+        $request = $this->queue->getHandleMap()->getRequest($handle);
     
         if (strpos($header, 'HTTP/') === 0) {
     
@@ -49,7 +52,7 @@ class RequestMediator implements RequestMediatorInterface
             $status = isset($startLine[2]) ? $startLine[2] : '';
     
             $response = new Response($code, array());
-            $this->handleMap->setResponse($handle, $response);
+            $this->queue->getHandleMap()->setResponse($handle, $response);
     
             $this->dispatcher->dispatch(
                 ResponseEvents::RECEIVE_STATUS_LINE, 
@@ -57,7 +60,7 @@ class RequestMediator implements RequestMediatorInterface
             );
     
         } elseif ($pos = strpos($header, ':')) {
-            $response = $this->handleMap->getResponse($handle);
+            $response = $this->queue->getHandleMap()->getResponse($handle);
             $response->getHeaders()->set(
                     trim(substr($header, 0, $pos)),
                     trim(substr($header, $pos + 1)),
@@ -76,13 +79,13 @@ class RequestMediator implements RequestMediatorInterface
      */
     public function progress(CurlHandleInterface $handle, $totalDownloadSize, $amountDownloaded, $totalUploadSize, $amountUploaded)
     {
-        $this->request->dispatch('curl.callback.progress', array(
-                'request'       => $this->request,
-                'handle'        => $handle,
-                'download_size' => $downloadSize,
-                'downloaded'    => $downloaded,
-                'upload_size'   => $uploadSize,
-                'uploaded'      => $uploaded
+        $this->dispatcher->dispatch(RequestEvents::PROGRESS, new RequestProgressEvent(
+            $this->queue, 
+            $this->queue->getHandleMap()->getRequest($handle), 
+            $totalDownloadSize, 
+            $amountDownloaded, 
+            $totalUploadSize, 
+            $amountUploaded
         ));
     }
     
@@ -124,12 +127,6 @@ class RequestMediator implements RequestMediatorInterface
         }
     
         return $read;
-    }
-    
-    public function setHandleMap(RequestResponseHandleMap $handleMap)
-    {
-        $this->handleMap = $handleMap;
-        return $this;
     }
     
     public function setDispatcher(EventDispatcherInterface $dispatcher)

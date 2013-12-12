@@ -1,5 +1,7 @@
 <?php
-namespace Yjv\HttpQueue\Request;
+namespace Yjv\HttpQueue\Queue;
+
+use Yjv\HttpQueue\RequestResponseHandleMap;
 
 use Yjv\HttpQueue\Curl\CurlHandleInterface;
 
@@ -36,4 +38,6 @@ interface RequestMediatorInterface
      * @param data $data
      */
     public function writeResponseBody(CurlHandleInterface $handle, $data);
+    
+    public function setHandleMap(RequestResponseHandleMap $handleMap);
 }

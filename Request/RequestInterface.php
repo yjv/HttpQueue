@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
+use Yjv\HttpQueue\Queue\RequestMediatorInterface;
+
 use Yjv\HttpQueue\Curl\CurlHandleFactoryInterface;
 
 interface RequestInterface extends CurlHandleFactoryInterface

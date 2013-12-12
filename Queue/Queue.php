@@ -124,7 +124,8 @@ class Queue implements QueueInterface
     {
         foreach ($this->pending as $pending) {
             
-            $handle = $pending->createHandle($this->requestMediator)
+            $pending->setRequestMediator($this->requestMediator);
+            $handle = $pending->createHandle()
                 ->setOption(CURLOPT_WRITEFUNCTION, array($this->requestMediator, 'writeResponseBody'))
                 ->setOption(CURLOPT_HEADERFUNCTION, array($this->requestMediator, 'writeResponseHeader'))
             ;

@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
+use Yjv\HttpQueue\Queue\RequestMediatorInterface;
+
 use Yjv\HttpQueue\Url\Url;
 
 use Yjv\HttpQueue\Curl\CurlHandle;
@@ -140,17 +142,13 @@ class Request implements RequestInterface
 //             $request->setHeader('Content-Length', $tempContentLength);
 //         }
         
-//         // Enable the progress function if the 'progress' param was set
-//         if ($requestCurlOptions->get('progress')) {
-//             // Wrap the function in a function that provides the curl handle to the mediator's progress function
-//             // Using this rather than injecting the handle into the mediator prevents a circular reference
-//             $curlOptions[CURLOPT_PROGRESSFUNCTION] = function () use ($mediator, $handle) {
-//                 $args = func_get_args();
-//                 $args[] = $handle;
-//                 call_user_func_array(array($mediator, 'progress'), $args);
-//             };
-//             $curlOptions[CURLOPT_NOPROGRESS] = false;
-//         }
+        // Enable the progress function if the 'progress' param was set
+        if ($this->getTrackProgress()) {
+
+            // Wrap the function in a function that provides the curl handle to the mediator's progress function
+            // Using this rather than injecting the handle into the mediator prevents a circular reference
+            $curlOptions[CURLOPT_PROGRESSFUNCTION] = array($this->requestMediator, 'progress');
+        }
         $curlOptions[CURLOPT_COOKIE] = $this->headers->getCookies(RequestHeaderBag::COOKIES_STRING);
         
         $handle->setOptions($curlOptions);
@@ -162,6 +160,16 @@ class Request implements RequestInterface
     {
         $this->curlOptions[$name] = $value;
         return $this;
+    }
+    
+    public function getCurlOption($name, $default = null)
+    {
+        if (isset($this->curlOptions[$name]) || array_key_exists($name, $this->curlOptions)) {
+            
+            return $this->curlOptions[$name];
+        }
+        
+        return $default;
     }
     
     public function setUrl($url)
@@ -212,6 +220,17 @@ class Request implements RequestInterface
     public function setRequestMediator(RequestMediatorInterface $requestMediator)
     {
         $this->requestMediator = $requestMediator;
+        return $this;
+    }
+    
+    public function getTrackProgress()
+    {
+        return !$this->getCurlOption(CURLOPT_NOPROGRESS, true);
+    }
+    
+    public function setTrackProgress($trackProgress)
+    {
+        $this->setCurlOption(CURLOPT_NOPROGRESS, !$trackProgress);
         return $this;
     }
 }

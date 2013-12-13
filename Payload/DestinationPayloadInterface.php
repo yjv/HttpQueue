@@ -1,9 +1,9 @@
 <?php
 namespace Yjv\HttpQueue\Payload;
 
-use Yjv\HttpQueue\Curl\CurlHandleInterface;
+use Yjv\HttpQueue\Connection\ConnectionInterface;
 
 interface DestinationPayloadInterface
 {
-    public function attachSourceHandle(CurlHandleInterface $handle);
+    public function attachSourceConnection(ConnectionInterface $connection);
 }

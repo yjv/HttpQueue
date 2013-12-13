@@ -162,10 +162,10 @@ class Queue implements QueueInterface
     */
     protected function processResults()
     {
-        while ($done = $this->curlMulti->getFinishedHandleInformation()) {
+        while ($done = $this->multiConnection->getFinishedConnectionInformation()) {
 
             $handle = $done->getHandle();
-            $this->curlMulti->removeHandle($handle);
+            $this->multiConnection->removeConnection($handle);
             $handle->close();
             $request = $this->handleMap->getRequest($handle);
             $response = $this->handleMap->getResponse($handle);

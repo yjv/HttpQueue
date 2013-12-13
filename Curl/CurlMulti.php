@@ -69,9 +69,9 @@ class CurlMulti implements MultiConnectionInterface
         return $result == -1 ? 0 : $result;
     }
     
-    public function getFinishedConnectionInformation(&$finishedHandleCount = 0)
+    public function getFinishedConnectionInformation(&$finishedConnectionCount = 0)
     {
-        $info = curl_multi_info_read($this->resource, $finishedHandleCount);
+        $info = curl_multi_info_read($this->resource, $finishedConnectionCount);
         
         if ($info) {
             

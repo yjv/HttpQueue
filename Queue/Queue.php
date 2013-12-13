@@ -19,7 +19,7 @@ use Yjv\HttpQueue\Curl\CurlMulti;
 
 use Yjv\HttpQueue\Response\Response;
 
-use Yjv\HttpQueue\RequestResponseHandleMap;
+use Yjv\HttpQueue\RequestResponseConnectionMap;
 
 use Yjv\HttpQueue\ResponseInterface;
 
@@ -47,17 +47,13 @@ class Queue implements QueueInterface
     
     public function __construct(
         MultiConnectionInterface $multiConnection = null, 
-        EventDispatcherInterface $dispatcher = null,
-        RequestMediatorInterface $requestMediator = null
+        EventDispatcherInterface $dispatcher = null
     ) {
         $this->pending = new \SplObjectStorage();
-        $this->handleMap = new RequestResponseHandleMap();
+        $this->handleMap = new RequestResponseConnectionMap();
         $this->responses = new \SplObjectStorage();
         $this->multiConnection = $multiConnection ?: new CurlMulti();
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
-        $this->requestMediator = $requestMediator ?: new RequestMediator();
-        $this->requestMediator->setDispatcher($this->dispatcher);
-        $this->requestMediator->setQueue($this);
     }
     
     public function queue(RequestInterface $request)
@@ -96,7 +92,7 @@ class Queue implements QueueInterface
     
     public function getMultiConnection()
     {
-        return $this->curlMulti;
+        return $this->multiConnection;
     }
     
     public function addEventListener($eventName, $listener, $priority = 0)
@@ -137,7 +133,7 @@ class Queue implements QueueInterface
             ;
             
             $this->handleMap->setRequest($handle, $pending);
-            $this->curlMulti->addHandle($handle);
+            $this->multiConnection->addConnection($handle);
             $this->pending->detach($pending);
         }
     }

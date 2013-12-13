@@ -15,6 +15,7 @@ class CurlMulti implements MultiConnectionInterface
     );
     protected $resource;
     protected $handles = array();
+    protected $ignoreTimeout = true;
     
     public function __construct()
     {
@@ -30,6 +31,7 @@ class CurlMulti implements MultiConnectionInterface
     {
         curl_multi_add_handle($this->resource, $handle->getResource());
         $this->handles[(int)$handle->getResource()] = $handle;
+        $this->ignoreTimeout = true;
         return $this;
     }
     
@@ -42,7 +44,7 @@ class CurlMulti implements MultiConnectionInterface
     
     public function execute(&$stillRunning = 0)
     {
-        return curl_multi_exec($this->resource, $stillRunning);
+        return $this->checkExecuteResult(curl_multi_exec($this->resource, $stillRunning));
     }
     
     public function getConnectionResponseContent(ConnectionInterface $handle)
@@ -52,11 +54,19 @@ class CurlMulti implements MultiConnectionInterface
     
     public function select($selectTimeout = 1.0)
     {
+        if ($this->ignoreTimeout) {
+            
+            $selectTimeout = 0.001;
+            $this->ignoreTimeout = false;
+        }
+        
         if(($result = curl_multi_select($this->resource, $selectTimeout)) == -1) {
             
             // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
             usleep(150);
         }
+        
+        return $result == -1 ? 0 : $result;
     }
     
     public function getFinishedConnectionInformation(&$finishedHandleCount = 0)
@@ -84,5 +94,26 @@ class CurlMulti implements MultiConnectionInterface
     public function getResource()
     {
         return $this->resource;
+    }
+    
+    /**
+     * Throw an exception for a cURL multi response if needed
+     *
+     * @param int $code Curl response code
+     * @throws CurlException
+     */
+    protected function checkExecuteResult($executeResultCode)
+    {
+        if ($executeResultCode == CurlMultiInterface::STATUS_PERFORMING) {
+    
+            return true;
+        }
+    
+        if ($executeResultCode == CurlMultiInterface::STATUS_OK) {
+    
+            return false;
+        }
+    
+        throw new CurlMultiException($executeResultCode);
     }
 }

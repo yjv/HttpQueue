@@ -148,39 +148,13 @@ class Queue implements QueueInterface
     protected function executeConnections()
     {
         // The first curl_multi_select often times out no matter what, but is usually required for fast transfers
-        $selectTimeout = 0.001;
         $active = false;
         do {
-            while ($this->checkCurlMultiExecuteResult($this->multiConnection->execute($active)));
+            while ($this->multiConnection->execute($active));
             
             $this->processResults();
-            if ($active && $this->multiConnection->select($selectTimeout) === -1) {
-                // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
-                usleep(150);
-            }
-            $selectTimeout = 1;
+            $this->multiConnection->select(1);
         } while ($active);
-    }
-    
-    /**
-     * Throw an exception for a cURL multi response if needed
-     *
-     * @param int $code Curl response code
-     * @throws CurlException
-     */
-    protected function checkCurlMultiExecuteResult($executeResultCode)
-    {
-        if ($executeResultCode == CurlMultiInterface::STATUS_PERFORMING) {
-            
-            return true;
-        }
-        
-        if ($executeResultCode == CurlMultiInterface::STATUS_OK) {
-            
-            return false;
-        }
-        
-        throw new CurlMultiException($executeResultCode);
     }
     
    /**

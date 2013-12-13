@@ -1,7 +1,11 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-class CurlMulti implements CurlMultiInterface
+use Yjv\HttpQueue\Connection\ConnectionInterface;
+
+use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
+
+class CurlMulti implements MultiConnectionInterface
 {
     protected static $multiErrors = array(
         CURLM_BAD_HANDLE      => array('CURLM_BAD_HANDLE', 'The passed-in handle is not a valid CURLM handle.'),
@@ -22,14 +26,14 @@ class CurlMulti implements CurlMultiInterface
         $this->close();
     }
     
-    public function addHandle(CurlHandleInterface $handle)
+    public function addConnection(ConnectionInterface $handle)
     {
         curl_multi_add_handle($this->resource, $handle->getResource());
         $this->handles[(int)$handle->getResource()] = $handle;
         return $this;
     }
     
-    public function removeHandle(CurlHandleInterface $handle)
+    public function removeConnection(ConnectionInterface $handle)
     {
         curl_multi_remove_handle($this->resource, $handle->getResource());
         unset($this->handles[(int)$handle->getResource()]);
@@ -41,17 +45,21 @@ class CurlMulti implements CurlMultiInterface
         return curl_multi_exec($this->resource, $stillRunning);
     }
     
-    public function getHandleResponseContent(CurlHandleInterface $handle)
+    public function getConnectionResponseContent(ConnectionInterface $handle)
     {
         return curl_multi_getcontent($handle->getResource());
     }
     
     public function select($selectTimeout = 1.0)
     {
-        return curl_multi_select($this->resource, $selectTimeout);
+        if(($result = curl_multi_select($this->resource, $selectTimeout)) == -1) {
+            
+            // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
+            usleep(150);
+        }
     }
     
-    public function getFinishedHandleInformation(&$finishedHandleCount = 0)
+    public function getFinishedConnectionInformation(&$finishedHandleCount = 0)
     {
         $info = curl_multi_info_read($this->resource, $finishedHandleCount);
         

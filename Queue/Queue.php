@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
+
 use Yjv\HttpQueue\Response\RecieveStatusLineEvent;
 
 use Yjv\HttpQueue\Response\ResponseEvents;
@@ -38,20 +40,20 @@ class Queue implements QueueInterface
     protected $pending;
     protected $responses;
     protected $handleMap;
-    protected $curlMulti;
+    protected $multiConnection;
     protected $dispatcher;
     protected $sendCalls = 0;
     protected $requestMediator;
     
     public function __construct(
-        CurlMultiInterface $curlMulti = null, 
+        MultiConnectionInterface $multiConnection = null, 
         EventDispatcherInterface $dispatcher = null,
         RequestMediatorInterface $requestMediator = null
     ) {
         $this->pending = new \SplObjectStorage();
         $this->handleMap = new RequestResponseHandleMap();
         $this->responses = new \SplObjectStorage();
-        $this->curlMulti = $curlMulti ?: new CurlMulti();
+        $this->multiConnection = $multiConnection ?: new CurlMulti();
         $this->dispatcher = $dispatcher ?: new EventDispatcher();
         $this->requestMediator = $requestMediator ?: new RequestMediator();
         $this->requestMediator->setDispatcher($this->dispatcher);
@@ -80,7 +82,7 @@ class Queue implements QueueInterface
         }
 
         $this->queuePendingRequests();
-        $this->executeHandles();   
+        $this->executeConections();   
 
         $this->sendCalls--;
         
@@ -92,7 +94,7 @@ class Queue implements QueueInterface
         }
     }
     
-    public function getCurlMulti()
+    public function getMultiConnection()
     {
         return $this->curlMulti;
     }
@@ -143,16 +145,16 @@ class Queue implements QueueInterface
     /**
      * Execute and select curl handles
      */
-    protected function executeHandles()
+    protected function executeConnections()
     {
         // The first curl_multi_select often times out no matter what, but is usually required for fast transfers
         $selectTimeout = 0.001;
         $active = false;
         do {
-            while ($this->checkCurlMultiExecuteResult($this->curlMulti->execute($active)));
+            while ($this->checkCurlMultiExecuteResult($this->multiConnection->execute($active)));
             
             $this->processResults();
-            if ($active && $this->curlMulti->select($selectTimeout) === -1) {
+            if ($active && $this->multiConnection->select($selectTimeout) === -1) {
                 // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
                 usleep(150);
             }

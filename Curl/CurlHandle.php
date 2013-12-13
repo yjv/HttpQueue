@@ -1,7 +1,9 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-class CurlHandle implements CurlHandleInterface
+use Yjv\HttpQueue\Connection\ConnectionInterface;
+
+class CurlHandle implements ConnectionInterface
 {
     protected $resource;
     protected $options = array();

@@ -29,7 +29,7 @@ class FormFieldsPayload extends Query implements SourcePayloadInterface
     
     public function getPayloadContent()
     {
-        return array_map(array($this, 'replaceCurlFiles'), iterator_to_array($this));
+        return array_map(array($this, 'replaceCurlFiles'), $this->getSingleLevelArray());
     }
     
     protected function replaceCurlFiles($element)
@@ -37,11 +37,6 @@ class FormFieldsPayload extends Query implements SourcePayloadInterface
         if ($element instanceof CurlFile) {
             
             return $element->getCurlValue();
-        }
-        
-        if (is_array($element)) {
-            
-            return array_map(array($this, 'replaceCurlFiles'), $element);
         }
         
         return $element;

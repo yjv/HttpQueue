@@ -1,17 +1,9 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-use Yjv\HttpQueue\Payload\SourceStreamInterface;
+use Yjv\HttpQueue\Connection\SourceStreamInterface;
 
-use Yjv\HttpQueue\Payload\DestinationStreamInterface;
-
-use Yjv\HttpQueue\Payload\StreamSourcePayloadInterface;
-
-use Yjv\HttpQueue\Payload\StreamDestinationPayloadInterface;
-
-use Yjv\HttpQueue\Payload\SourcePayloadInterface;
-
-use Yjv\HttpQueue\Payload\DestinationPayloadInterface;
+use Yjv\HttpQueue\Connection\DestinationStreamInterface;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
@@ -81,6 +73,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setDestinationStream(DestinationStreamInterface $destinationStream)
     {
+        $destinationStream->setHandle($this);
         $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationStream)
         {
             return $destinationStream->writeStream($data);
@@ -91,6 +84,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setSourceStream(SourceStreamInterface $sourceStream)
     {
+        $sourceStream->setHandle($this);
         $this->setOptions(array(
             CURLOPT_UPLOAD => true,
             CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)
@@ -104,10 +98,8 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setSourcePayload(SourcePayloadInterface $sourcePayload)
     {
+        $sourcePayload->setHandle($this);
         $this->setOption(CURLOPT_POSTFIELDS, $sourcePayload->getPayloadContent());
-        
-        
-        
         return $this;
     }
     

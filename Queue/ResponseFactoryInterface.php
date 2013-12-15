@@ -1,9 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
-use Yjv\HttpQueue\Connection\ConnectionInterface;
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 interface ResponseFactoryInterface
 {
-    public function createResponse(ConnectionInterface $connection);
+    public function registerHandle(ConnectionHandleInterface $handle);
+    public function getResponse(ConnectionHandleInterface $handle);
 }

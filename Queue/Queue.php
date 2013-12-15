@@ -128,8 +128,6 @@ class Queue implements QueueInterface
             
             $pending->setRequestMediator($this->requestMediator);
             $handle = $pending->createHandle()
-                ->setOption(CURLOPT_WRITEFUNCTION, array($this->requestMediator, 'writeResponseBody'))
-                ->setOption(CURLOPT_HEADERFUNCTION, array($this->requestMediator, 'writeResponseHeader'))
             ;
             
             $this->handleMap->setRequest($handle, $pending);

@@ -1,53 +1,43 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-use Yjv\HttpQueue\Queue\RequestMediatorInterface;
-
 use Yjv\HttpQueue\Url\Url;
-
-use Yjv\HttpQueue\Curl\CurlHandle;
-
-use Symfony\Component\HttpFoundation\HeaderBag;
 
 class Request implements RequestInterface
 {
-    protected $curlOptions;
+    protected $handleOptions = array();
     protected $url;
     protected $method;
     protected $headers;
     protected $body;
-    protected $requestMediator;
+    protected $trackProgress = false;
     
     public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), $body = '')
     {
-        $this->curlOptions = array(
-                CURLOPT_CONNECTTIMEOUT => 150,
-                CURLOPT_RETURNTRANSFER => false,
-                CURLOPT_HEADER         => false,
-                // Verifies the authenticity of the peer's certificate
-                CURLOPT_SSL_VERIFYPEER => 1,
-                // Certificate must indicate that the server is the server to which you meant to connect
-                CURLOPT_SSL_VERIFYHOST => 2
-        );
         $this->setUrl($url);
         $this->setMethod($method);
         $this->setHeaders($headers);
     }
 
-    public function setCurlOption($name, $value)
+    public function setHandleOption($name, $value)
     {
-        $this->curlOptions[$name] = $value;
+        $this->handleOptions[$name] = $value;
         return $this;
     }
     
-    public function getCurlOption($name, $default = null)
+    public function getHandleOption($name, $default = null)
     {
-        if (isset($this->curlOptions[$name]) || array_key_exists($name, $this->curlOptions)) {
+        if (isset($this->handleOptions[$name]) || array_key_exists($name, $this->handleOptions)) {
             
-            return $this->curlOptions[$name];
+            return $this->handleOptions[$name];
         }
         
         return $default;
+    }
+    
+    public function getHandleOptions()
+    {
+        return $this->handleOptions;
     }
     
     public function setUrl($url)
@@ -58,7 +48,6 @@ class Request implements RequestInterface
         }
         
         $this->url = $url;
-        $this->setCurlOption(CURLOPT_URL, (string)$url);
         return $this;
     }
     
@@ -70,13 +59,7 @@ class Request implements RequestInterface
     public function setMethod($method)
     {
         $this->method = $method;
-        
-        if ($method == RequestInterface::METHOD_GET) {
-            
-            return $this->setCurlOption(CURLOPT_HTTPGET, true);
-        }
-        
-        return $this->setCurlOption(CURLOPT_CUSTOMREQUEST, $method);
+        return $this;
     }
     
     public function getMethod()
@@ -95,20 +78,14 @@ class Request implements RequestInterface
         return $this->headers;
     }
     
-    public function setRequestMediator(RequestMediatorInterface $requestMediator)
-    {
-        $this->requestMediator = $requestMediator;
-        return $this;
-    }
-    
     public function getTrackProgress()
     {
-        return !$this->getCurlOption(CURLOPT_NOPROGRESS, true);
+        return !$this->getHandleOption(CURLOPT_NOPROGRESS, true);
     }
     
     public function setTrackProgress($trackProgress)
     {
-        $this->setCurlOption(CURLOPT_NOPROGRESS, !$trackProgress);
+        $this->setHandleOption(CURLOPT_NOPROGRESS, !$trackProgress);
         return $this;
     }
 }

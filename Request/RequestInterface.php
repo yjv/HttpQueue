@@ -11,7 +11,13 @@ interface RequestInterface
     const METHOD_POST = 'POST';
     const METHOD_HEAD = 'HEAD';
     
-    public function getCurlOptions();
+    public function getHandleOptions();
     public function getMethod();
+    
+    /**
+     * @return \Yjv\HttpQueue\Request\RequestHeaderBag
+     */
     public function getHeaders();
+    public function getUrl();
+    public function getBody();
 }

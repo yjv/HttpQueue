@@ -1,28 +1,17 @@
 <?php
 namespace Yjv\HttpQueue\Payload;
 
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+
 use Yjv\HttpQueue\Curl\CurlHandleInterface;
 
 use Guzzle\Stream\Stream;
 
-class StreamPayload extends Stream implements PayloadInterface
+class StreamPayload extends Stream implements StreamDestinationPayloadInterface, StreamSourcePayloadInterface
 {
-    protected $sourceHandle;
-    protected $destinationHandle;
-    
-    public function attachSourceHandle(CurlHandleInterface $handle)
+    public function setHandle(ConnectionHandleInterface $handle)
     {
-        $this->sourceHandle = $handle;
-        $this->sourceHandle->setOption(CURLOPT_READFUNCTION, array($this, 'readPayload'));
-        $this->rewind();
-        return $this;
-    }
-    
-    public function attachDestinationHandle(CurlHandleInterface $handle)
-    {
-        $this->destinationHandle = $handle;
-        $this->destinationHandle->setOption(CURLOPT_WRITEFUNCTION, array($this, 'writePayload'));
-        $this->rewind();
+        $this->attemptRewind();
         return $this;
     }
     
@@ -30,7 +19,7 @@ class StreamPayload extends Stream implements PayloadInterface
      *
      * @see RequestMediatorInterface::writeResponseBody
      */
-    public function writePayload(CurlHandleInterface $handle, $data)
+    public function writePayload($data)
     {
         return $this->write($data);
     }
@@ -39,7 +28,7 @@ class StreamPayload extends Stream implements PayloadInterface
      *
      * @see RequestMediatorInterface::readRequestBody
      */
-    public function readPayload(CurlHandleInterface $handle, $fileDescriptor, $lengthOfDataRead)
+    public function readPayload($lengthOfDataToRead)
     {
         return $this->read($lengthOfDataRead);
     }

@@ -1,9 +1,21 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-use Yjv\HttpQueue\Connection\ConnectionInterface;
+use Yjv\HttpQueue\Payload\SourceStreamInterface;
 
-class CurlHandle implements ConnectionInterface
+use Yjv\HttpQueue\Payload\DestinationStreamInterface;
+
+use Yjv\HttpQueue\Payload\StreamSourcePayloadInterface;
+
+use Yjv\HttpQueue\Payload\StreamDestinationPayloadInterface;
+
+use Yjv\HttpQueue\Payload\SourcePayloadInterface;
+
+use Yjv\HttpQueue\Payload\DestinationPayloadInterface;
+
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+
+class CurlHandle implements ConnectionHandleInterface
 {
     protected $resource;
     protected $options = array();
@@ -64,6 +76,38 @@ class CurlHandle implements ConnectionInterface
     public function close()
     {
         curl_close($this->resource);
+        return $this;
+    }
+    
+    public function setDestinationStream(DestinationStreamInterface $destinationStream)
+    {
+        $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationStream)
+        {
+            return $destinationStream->writeStream($data);
+        });
+        
+        return $this;
+    }
+    
+    public function setSourceStream(SourceStreamInterface $sourceStream)
+    {
+        $this->setOptions(array(
+            CURLOPT_UPLOAD => true,
+            CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)
+            {
+                return $sourceStream->readStream($amountOfDataToRead);
+            }
+        ));
+        
+        return $this;
+    }
+    
+    public function setSourcePayload(SourcePayloadInterface $sourcePayload)
+    {
+        $this->setOption(CURLOPT_POSTFIELDS, $sourcePayload->getPayloadContent());
+        
+        
+        
         return $this;
     }
     

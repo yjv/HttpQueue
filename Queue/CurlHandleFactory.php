@@ -1,0 +1,160 @@
+<?php
+namespace Yjv\HttpQueue\Queue;
+
+use Yjv\HttpQueue\Payload\SourcePayloadInterface;
+
+use Yjv\HttpQueue\Payload\SourceStreamInterface;
+
+use Yjv\HttpQueue\Curl\CurlHandle;
+
+use Yjv\HttpQueue\Request\RequestInterface;
+
+class CurlHandleFactory implements HandleFactoryInterface
+{
+    public function createHandle(RequestInterface $request)
+    {
+        $headers = clone $request->getHeaders();
+        $handle = new CurlHandle();
+        $curlOptions = array(
+                CURLOPT_CONNECTTIMEOUT => 150,
+                CURLOPT_RETURNTRANSFER => false,
+                CURLOPT_HEADER         => false,
+                // Verifies the authenticity of the peer's certificate
+                CURLOPT_SSL_VERIFYPEER => 1,
+                // Certificate must indicate that the server is the server to which you meant to connect
+                CURLOPT_SSL_VERIFYHOST => 2
+        );
+        
+        $url = $request->getUrl();
+        $curlOptions[CURLOPT_URL] = (string)$url;
+        
+        if ($url->getPort()) {
+        
+            $curlOptions[CURLOPT_PORT] = $url->getPort();
+        }
+        
+        $curlOptions[CURLOPT_NOPROGRESS] = $request->getTrackProgress();
+        
+        $method = $request->getMethod();
+
+        
+        if (defined('CURLOPT_PROTOCOLS')) {
+            // Allow only HTTP and HTTPS protocols
+            $curlOptions[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
+        }
+        
+        //Add CURLOPT_ENCODING if Accept-Encoding header is provided
+        if ($headers->has('Accept-Encoding')) {
+            
+            $Headers->set('Accept', '');
+            $curlOptions[CURLOPT_ENCODING] = (string)$headers->get('Accept-Encoding');
+
+            // Let cURL set the Accept-Encoding header, prevents duplicate values
+            $headers->remove('Accept-Encoding');
+        }
+        
+                // Specify settings according to the HTTP method
+                if ($method == RequestInterface::METHOD_GET) {
+                    $curlOptions[CURLOPT_HTTPGET] = true;
+                } else {
+                    $curlOptions[CURLOPT_CUSTOMREQUEST] = $method;
+                }
+                
+                if ($method == RequestInterface::METHOD_HEAD) {
+                    $curlOptions[CURLOPT_NOBODY] = true;
+                }
+
+                 if($request->getBody() instanceof SourceStreamInterface) {
+        
+                     $handle->setSourceStream($request->getBody());
+                     
+                     if ($headers->has('Content-Length')) {
+                        
+                        $curlOptions[CURLOPT_INFILESIZE] = (int)(string)$headers->get('Content-Length');
+                    }
+                 }
+
+                 if ($request->getBody() instanceof SourcePayloadInterface) {
+
+                     $handle->setSourcePayload($request->getBody());
+                     // Remove the curl generated Content-Type header if none was set manually
+                    if (!$headers->has('Content-Type')) {
+                        
+                        $headers->set('Content-type', '');
+                    }
+                 }
+                     // Handle sending raw bodies in a request
+                    if ($request->getBody()) {
+                        // You can send the body as a string using curl's CURLOPT_POSTFIELDS
+                        if ($bodyAsString) {
+                            $curlOptions[CURLOPT_POSTFIELDS] = (string) $request->getBody();
+                            // Allow curl to add the Content-Length for us to account for the times when
+                            // POST redirects are followed by GET requests
+                            if ($tempContentLength = $request->getHeader('Content-Length')) {
+                                $tempContentLength = (int) (string) $tempContentLength;
+                            }
+
+                        } else {
+                            $curlOptions[CURLOPT_UPLOAD] = true;
+                            // Let cURL handle setting the Content-Length header
+                            if ($tempContentLength = $request->getHeader('Content-Length')) {
+                                $tempContentLength = (int) (string) $tempContentLength;
+                            }
+                            // Add a callback for curl to read data to send with the request only if a body was specified
+                            $curlOptions[CURLOPT_READFUNCTION] = array($mediator, 'readRequestBody');
+                            // Attempt to seek to the start of the stream
+                            $request->getBody()->seek(0);
+                        }
+        
+                    } else {
+        
+                        // Special handling for POST specific fields and files
+                        $postFields = false;
+                        if (count($request->getPostFiles())) {
+                            $postFields = $request->getPostFields()->useUrlEncoding(false)->urlEncode();
+                            foreach ($request->getPostFiles() as $key => $data) {
+                                $prefixKeys = count($data) > 1;
+                                foreach ($data as $index => $file) {
+                                    // Allow multiple files in the same key
+                                    $fieldKey = $prefixKeys ? "{$key}[{$index}]" : $key;
+                                    $postFields[$fieldKey] = $file->getCurlValue();
+                                }
+                            }
+                        } elseif (count($request->getPostFields())) {
+                            $postFields = (string) $request->getPostFields()->useUrlEncoding(true);
+                        }
+        
+                        if ($postFields !== false) {
+                            if ($method == 'POST') {
+                                unset($curlOptions[CURLOPT_CUSTOMREQUEST]);
+                                $curlOptions[CURLOPT_POST] = true;
+                            }
+                            $curlOptions[CURLOPT_POSTFIELDS] = $postFields;
+                            $headers->remove('Content-Length');
+                        }
+                    }
+        
+                    // If the Expect header is not present, prevent curl from adding it
+                    if (!$headers->has('Expect')) {
+                        $curlOptions[CURLOPT_HTTPHEADER][] = 'Expect:';
+                    }
+                }
+        
+                // If a Content-Length header was specified but we want to allow curl to set one for us
+                if (null !== $tempContentLength) {
+                    $headers->remove('Content-Length');
+                }
+        
+        // Do not set an Accept header by default
+        if (!isset($curlOptions[CURLOPT_ENCODING])) {
+            $curlOptions[CURLOPT_HTTPHEADER][] = 'Accept:';
+        }
+        
+        $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCase();
+        $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_STRING);
+        $handle->setOptions($curlOptions);
+        $curlOptions->setOptions($request->getCurlOptions());        
+        
+        return $handle;
+    }
+}

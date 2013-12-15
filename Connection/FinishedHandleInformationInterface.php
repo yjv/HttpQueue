@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Connection;
 
-interface FinishedConnectionInformationInterface
+interface FinishedHandleInformationInterface
 {
     public function getConnection();
     public function getResult();

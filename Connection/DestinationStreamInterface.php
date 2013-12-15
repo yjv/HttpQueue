@@ -1,7 +1,7 @@
 <?php
-namespace Yjv\HttpQueue\Payload;
+namespace Yjv\HttpQueue\Connection;
 
-interface DestinationStreamInterface
+interface DestinationStreamInterface extends PayloadInterface
 {
     /**
      * 

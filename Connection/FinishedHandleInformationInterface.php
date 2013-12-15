@@ -3,7 +3,7 @@ namespace Yjv\HttpQueue\Connection;
 
 interface FinishedHandleInformationInterface
 {
-    public function getConnection();
+    public function getHandle();
     public function getResult();
     public function getMessage();
 }

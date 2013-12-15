@@ -11,16 +11,16 @@ class Query extends \ArrayObject
     
     public function __toString()
     {
-        return $this->buildString(iterator_to_array($this));
+        return $this->getString();
     }
     
-    protected function buildString(array $params, $prefix = null)
+    public function getSingleLevelArray($urlEncoded = true, $prefix = null)
     {
         $elements = array();
         
-        foreach ($params as $key => $value) {
+        foreach ($this as $key => $value) {
             
-            $key = rawurlencode($key);
+            $key = $urlEncoded ? rawurlencode($key) : $key;
             $key = ($prefix)
                 ? $prefix.'['.$key.']'
                 : $key
@@ -28,14 +28,26 @@ class Query extends \ArrayObject
             
             if (is_array($value)) {
                 
-                $elements[] = $this->buildString($value, $key);
+                foreach ($this->getSingleLevelArray($urlEncoded, $key) as $subKey => $subValue) {
+
+                    $elements[$subKey] = $subValue;
+                }
             } else {
-                $elements[] = sprintf(
-                    '%s=%s', 
-                    $key, 
-                    $value ? rawurlencode($value) : ''
-                );
+                
+                $elements[$key] = $value ? ($urlEncoded ? rawurlencode($value) : $value) : '';
             }
+        }
+        
+        return $elements;
+    }
+    
+    public function getString($prefix = null)
+    {
+        $elements = array();
+        
+        foreach ($this->getSingleLevelArray(true, $prefix) as $value) {
+            
+            $elements[] = $value;
         }
         
         return implode('&', $elements);

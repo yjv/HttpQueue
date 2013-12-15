@@ -1,13 +1,15 @@
 <?php
 namespace Yjv\HttpQueue\Payload;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Connection\SourceStreamInterface;
 
-use Yjv\HttpQueue\Curl\CurlHandleInterface;
+use Yjv\HttpQueue\Connection\DestinationStreamInterface;
+
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 use Guzzle\Stream\Stream;
 
-class StreamPayload extends Stream implements StreamDestinationPayloadInterface, StreamSourcePayloadInterface
+class StreamPayload extends Stream implements DestinationStreamInterface, SourceStreamInterface
 {
     public function setHandle(ConnectionHandleInterface $handle)
     {
@@ -19,7 +21,7 @@ class StreamPayload extends Stream implements StreamDestinationPayloadInterface,
      *
      * @see RequestMediatorInterface::writeResponseBody
      */
-    public function writePayload($data)
+    public function writeStream($data)
     {
         return $this->write($data);
     }
@@ -28,7 +30,7 @@ class StreamPayload extends Stream implements StreamDestinationPayloadInterface,
      *
      * @see RequestMediatorInterface::readRequestBody
      */
-    public function readPayload($lengthOfDataToRead)
+    public function readStream($lengthOfDataToRead)
     {
         return $this->read($lengthOfDataRead);
     }

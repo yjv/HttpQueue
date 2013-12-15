@@ -27,6 +27,11 @@ class CurlHandleFactory implements HandleFactoryInterface
                 CURLOPT_SSL_VERIFYHOST => 2
         );
         
+        if (defined('CURLOPT_PROTOCOLS')) {
+            // Allow only HTTP and HTTPS protocols
+            $curlOptions[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
+        }
+        
         $url = $request->getUrl();
         $curlOptions[CURLOPT_URL] = (string)$url;
         
@@ -39,11 +44,6 @@ class CurlHandleFactory implements HandleFactoryInterface
         
         $method = $request->getMethod();
         
-        if (defined('CURLOPT_PROTOCOLS')) {
-            // Allow only HTTP and HTTPS protocols
-            $curlOptions[CURLOPT_PROTOCOLS] = CURLPROTO_HTTP | CURLPROTO_HTTPS;
-        }
-        
         //Add CURLOPT_ENCODING if Accept-Encoding header is provided
         if ($headers->has('Accept-Encoding')) {
             
@@ -54,54 +54,53 @@ class CurlHandleFactory implements HandleFactoryInterface
             $headers->remove('Accept-Encoding');
         }
         
-                // Specify settings according to the HTTP method
-                if ($method == RequestInterface::METHOD_GET) {
-                    $curlOptions[CURLOPT_HTTPGET] = true;
-                } else {
-                    $curlOptions[CURLOPT_CUSTOMREQUEST] = $method;
-                }
-                
-                if ($method == RequestInterface::METHOD_HEAD) {
-                    $curlOptions[CURLOPT_NOBODY] = true;
-                }
-
-                 if ($request->getBody() instanceof PayloadInterface) {
-                     
-                     if ($request->getBody()->getContentType()) {
-                         
-                         $headers->set('Content-Type', $request->getBody()->getContentType());
-                     }
-                 }
-                 
-                 if($request->getBody() instanceof SourceStreamInterface) {
+        if ($method == RequestInterface::METHOD_GET) {
+            
+            $curlOptions[CURLOPT_HTTPGET] = true;
+        } else {
+            
+            $curlOptions[CURLOPT_CUSTOMREQUEST] = $method;
+        }
         
-                     $handle->setSourceStream($request->getBody());
-                     
-                     if ($headers->has('Content-Length')) {
-                        
-                         $curlOptions[CURLOPT_INFILESIZE] = (int)(string)$headers->get('Content-Length');
-                     }
-                     
-                     $headers->remove('Content-Length');
-                 }
+        if ($method == RequestInterface::METHOD_HEAD) {
+            
+            $curlOptions[CURLOPT_NOBODY] = true;
+        }
 
-                 if ($request->getBody() instanceof SourcePayloadInterface) {
+        if ($request->getBody() instanceof PayloadInterface) {
+             
+            if ($request->getBody()->getContentType()) {
 
-                     $handle->setSourcePayload($request->getBody());
-                     
-                     // Remove the curl generated Content-Type header if none was set manually
-                     if (!$headers->has('Content-Type')) {
-                        
-                         $headers->set('Content-type', '');
-                     }
-                     
-                     $headers->remove('Content-Length');
-                 }
-              
+                $headers->set('Content-Type', $request->getBody()->getContentType());
+            }
+            
+            if($request->getBody() instanceof SourceStreamInterface) {
+            
+                $handle->setSourceStream($request->getBody());
+                
+                if ($headers->has('Content-Length')) {
+                
+                    $curlOptions[CURLOPT_INFILESIZE] = (int)(string)$headers->get('Content-Length');
+                }
+            }
+            
+            if ($request->getBody() instanceof SourcePayloadInterface) {
+            
+                $handle->setSourcePayload($request->getBody());
+                
+                if (!$headers->has('Content-Type')) {
+                
+                    $headers->set('Content-type', '');
+                }
+            }
+            
+            $headers->remove('Content-Length');
+        }
         
         // If the Expect header is not present, prevent curl from adding it
         if (!$headers->has('Expect')) {
-            $curlOptions[CURLOPT_HTTPHEADER][] = 'Expect:';
+            
+            $headers->set('Expect', '');
         } 
                
         $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCase();

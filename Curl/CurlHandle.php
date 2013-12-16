@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
+use Yjv\HttpQueue\Queue\HandleDelegateInterface;
+
 use Yjv\HttpQueue\Connection\SourceStreamInterface;
 
 use Yjv\HttpQueue\Connection\DestinationStreamInterface;
@@ -11,6 +13,7 @@ class CurlHandle implements ConnectionHandleInterface
 {
     protected $resource;
     protected $options = array();
+    protected $delegate;
     
     public function __construct()
     {
@@ -101,31 +104,36 @@ class CurlHandle implements ConnectionHandleInterface
         return $this;
     }
     
+    public function setDelegate(HandleDelegateInterface $delegate)
+    {
+        $this->delegate = $delegate;
+        return $this;
+    }
+    
+    public function getDelegate()
+    {
+        return $this->delegate;
+    }
+    
     protected function wrapCallbacks(array $options)
     {
         $curlObject = $this;
         
-        $callbackOptions = array(
-            CURLOPT_WRITEFUNCTION,
-            CURLOPT_READFUNCTION,
-            CURLOPT_HEADERFUNCTION,
-            CURLOPT_PROGRESSFUNCTION
-        );
-        
-        if (defined('CURLOPT_PASSWDFUNCTION')) {
-            
-            $callbackOptions[] = CURLOPT_PASSWDFUNCTION;
-        }
-        
-        foreach ($callbackOptions as $callbackOption) {
+        foreach (CurlEvents::getCallbackEvents() as $callbackOption) {
             
             if (isset($options[$callbackOption])) {
                 
                 $internalFunction = $options[$callbackOption];
-                $options[$callbackOption] = function() use ($internalFunction, $curlObject)
+                $options[$callbackOption] = function() use ($internalFunction, $curlObject, $callbackOption)
                 {
                     $args = func_get_args();
-                    $args[0] = $curlObject;
+                    array_shift($args);
+                    $curlObject->getDelegate()->handleEvent(
+                        CurlEvents::getCallbackEvents($callbackOption), 
+                        $curlObject, 
+                        $args
+                    );
+                    array_unshift($args, $curlObject);
                     return call_user_func_array($internalFunction, $args);
                 };
             }

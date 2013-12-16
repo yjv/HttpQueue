@@ -17,4 +17,5 @@ interface ConnectionHandleInterface
     public function setSourceStream(SourceStreamInterface $sourcePayload);
     public function setDestinationStream(DestinationStreamInterface $destinationPaylod);
     public function setSourcePayload(SourcePayloadInterface $sourcePayload);
+    public function setDelegate();
 }

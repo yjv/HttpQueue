@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+
 use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
 
 use Yjv\HttpQueue\Response\RecieveStatusLineEvent;
@@ -35,7 +37,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class Queue implements QueueInterface
+class Queue implements QueueInterface, HandleDelegateInterface
 {
     protected $pending;
     protected $responses;
@@ -121,12 +123,16 @@ class Queue implements QueueInterface
     {
         return $this->handleMap;
     }
+    
+    public function handleEvent($name, ConnectionHandleInterface $handle, array $args)
+    {
+        $this->dispatcher->dispatch(QueueEvents::HANDLE_EVENT, new HandleEvent($name, $handle, $args));
+    }
 
     protected function queuePendingRequests()
     {
         foreach ($this->pending as $pending) {
             
-            $pending->setRequestMediator($this->requestMediator);
             $handle = $pending->createHandle()
             ;
             

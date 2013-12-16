@@ -7,7 +7,7 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Request\RequestEvent;
 
-class HeaderRecievedEvent extends ResponseEvent
+class HeaderReceivedEvent extends ResponseEvent
 {
     protected $header;
     

@@ -73,7 +73,6 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setDestinationStream(DestinationStreamInterface $destinationStream)
     {
-        $destinationStream->setHandle($this);
         $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationStream)
         {
             return $destinationStream->writeStream($data);
@@ -84,7 +83,6 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setSourceStream(SourceStreamInterface $sourceStream)
     {
-        $sourceStream->setHandle($this);
         $this->setOptions(array(
             CURLOPT_UPLOAD => true,
             CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)

@@ -13,6 +13,14 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 class CurlHandleFactory implements HandleFactoryInterface
 {
+    protected $queue;
+    protected $payloadFactory;
+    
+    public function __construct(SourcePayloadFactoryInterface $payloadFactory)
+    {
+        $this->payloadFactory = $payloadFactory;
+    }
+    
     public function createHandle(RequestInterface $request)
     {
         $headers = clone $request->getHeaders();
@@ -68,15 +76,25 @@ class CurlHandleFactory implements HandleFactoryInterface
         }
 
         if ($request->getBody() instanceof PayloadInterface) {
+            
+            $payload = $request->getBody();
+        } else {
+            
+            $payload = $this->payloadFactory->getSourcePayload($handle, $request);
+        }
+        
+        if ($payload instanceof PayloadInterface) {
              
-            if ($request->getBody()->getContentType()) {
+            if ($payload->getContentType()) {
 
-                $headers->set('Content-Type', $request->getBody()->getContentType());
+                $headers->set('Content-Type', $payload->getContentType());
             }
             
-            if($request->getBody() instanceof SourceStreamInterface) {
+            $payload->setHandle($handle);
             
-                $handle->setSourceStream($request->getBody());
+            if($payload instanceof SourceStreamInterface) {
+            
+                $handle->setSourceStream($payload);
                 
                 if ($headers->has('Content-Length')) {
                 
@@ -84,9 +102,9 @@ class CurlHandleFactory implements HandleFactoryInterface
                 }
             }
             
-            if ($request->getBody() instanceof SourcePayloadInterface) {
+            if ($payload instanceof SourcePayloadInterface) {
             
-                $handle->setSourcePayload($request->getBody());
+                $handle->setSourcePayload($payload);
                 
                 if (!$headers->has('Content-Type')) {
                 
@@ -109,5 +127,10 @@ class CurlHandleFactory implements HandleFactoryInterface
         $curlOptions->setOptions($request->getCurlOptions());        
         
         return $handle;
+    }
+    
+    public function setQueue(QueueInterface $queue)
+    {
+        $this->queue = $queue;
     }
 }

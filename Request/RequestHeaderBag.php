@@ -44,6 +44,14 @@ class RequestHeaderBag extends HeaderBag
     {
         return array_combine($this->headerNames, $this->headers);
     }
+    
+    public function allPreserveCaseFlattened()
+    {
+        return array_map(function(array $value)
+        {
+            return implode(';', $value);
+        }, $this->allPreserveCase());
+    }
 
     /**
      * {@inheritdoc}

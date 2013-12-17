@@ -88,4 +88,9 @@ class Request implements RequestInterface
         $this->setHandleOption(CURLOPT_NOPROGRESS, !$trackProgress);
         return $this;
     }
+    
+    public function getBody()
+    {
+        return $this->body;
+    }
 }

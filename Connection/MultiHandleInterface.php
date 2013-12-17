@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpQueue\Connnection;
+namespace Yjv\HttpQueue\Connection;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 

@@ -1,13 +1,13 @@
 <?php
 namespace Yjv\HttpQueue;
 
-use Yjv\HttpQueue\Connection\ConnectionInterface;
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 use Yjv\HttpQueue\Response\ResponseInterface;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-class RequestResponseConnectionMap
+class RequestResponseHandleMap
 {
     protected $requests;
     protected $responses;
@@ -23,9 +23,9 @@ class RequestResponseConnectionMap
      * @param ConnectionInterface $handle
      * @return \Yjv\HttpQueue\Request\RequestInterface
      */
-    public function getRequest(ConnectionInterface $connection)
+    public function getRequest(ConnectionHandleInterface $handle)
     {
-        return isset($this->requests[$connection]) ? $this->requests[$connection] : null;
+        return isset($this->requests[$handle]) ? $this->requests[$handle] : null;
     }
     
     /**
@@ -36,9 +36,9 @@ class RequestResponseConnectionMap
     {
         $requests = array();
         
-        foreach ($this->requests as $connection) {
+        foreach ($this->requests as $handle) {
             
-            $requests[] = $this->requests[$connection];
+            $requests[] = $this->requests[$handle];
         }
         
         return $requests;
@@ -50,9 +50,9 @@ class RequestResponseConnectionMap
      * @param RequestInterface $request
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function setRequest(ConnectionInterface $connection, RequestInterface $request)
+    public function setRequest(ConnectionHandleInterface $handle, RequestInterface $request)
     {
-        $this->requests[$connection] = $request;
+        $this->requests[$handle] = $request;
         return $this;
     }
     
@@ -61,9 +61,9 @@ class RequestResponseConnectionMap
      * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\Response\ResponseInterface
      */
-    public function getResponse(ConnectionInterface $connection)
+    public function getResponse(ConnectionHandleInterface $handle)
     {
-        return isset($this->responses[$connection]) ? $this->responses[$connection] : null;
+        return isset($this->responses[$handle]) ? $this->responses[$handle] : null;
     }
 
     /**
@@ -74,9 +74,9 @@ class RequestResponseConnectionMap
     {
         $responses = array();
     
-        foreach ($this->responses as $connection) {
+        foreach ($this->responses as $handle) {
     
-            $requests[] = $this->responses[$connection];
+            $requests[] = $this->responses[$handle];
         }
     
         return $responses;
@@ -88,9 +88,9 @@ class RequestResponseConnectionMap
      * @param ResponseInterface $response
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function setResponse(ConnectionInterface $connection, ResponseInterface $response)
+    public function setResponse(ConnectionHandleInterface $handle, ResponseInterface $response)
     {
-        $this->responses[$connection] = $response;
+        $this->responses[$handle] = $response;
         return $this;
     }
     
@@ -99,11 +99,11 @@ class RequestResponseConnectionMap
      * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function clear(ConnectionInterface $connection = null)
+    public function clear(ConnectionHandleInterface $handle = null)
     {
-        if ($connection) {
+        if ($handle) {
             
-            unset($this->requests[$connection], $this->responses[$connection]);
+            unset($this->requests[$handle], $this->responses[$handle]);
         } else {
             
             $this->requests->removeAll($this->requests);

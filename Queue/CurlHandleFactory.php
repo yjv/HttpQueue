@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Request\RequestHeaderBag;
+
 use Yjv\HttpQueue\Connection\PayloadInterface;
 
 use Yjv\HttpQueue\Payload\SourcePayloadInterface;
@@ -13,14 +15,6 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 class CurlHandleFactory implements HandleFactoryInterface
 {
-    protected $queue;
-    protected $payloadFactory;
-    
-    public function __construct(SourcePayloadFactoryInterface $payloadFactory)
-    {
-        $this->payloadFactory = $payloadFactory;
-    }
-    
     public function createHandle(RequestInterface $request)
     {
         $headers = clone $request->getHeaders();
@@ -48,7 +42,11 @@ class CurlHandleFactory implements HandleFactoryInterface
             $curlOptions[CURLOPT_PORT] = $url->getPort();
         }
         
-        $curlOptions[CURLOPT_NOPROGRESS] = !$request->getTrackProgress();
+        if ($request->getTrackProgress()) {
+
+            $curlOptions[CURLOPT_NOPROGRESS] = false;
+            $curlOptions[CURLOPT_PROGRESSFUNCTION] = function(){};
+        }
         
         $method = $request->getMethod();
         
@@ -76,15 +74,9 @@ class CurlHandleFactory implements HandleFactoryInterface
         }
 
         if ($request->getBody() instanceof PayloadInterface) {
-            
-            $payload = $request->getBody();
-        } else {
-            
-            $payload = $this->payloadFactory->getSourcePayload($handle, $request);
-        }
-        
-        if ($payload instanceof PayloadInterface) {
              
+            $payload = $request->getBody();
+            
             if ($payload->getContentType()) {
 
                 $headers->set('Content-Type', $payload->getContentType());
@@ -121,10 +113,17 @@ class CurlHandleFactory implements HandleFactoryInterface
             $headers->set('Expect', '');
         } 
                
-        $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCase();
+        $headerArray = array();
+        
+        foreach ($headers->allPreserveCase() as $name => $headerValues) {
+            
+            $headerArray[] = sprintf('%s: %s', $name, implode('; ', $headerValues));
+        }
+        
+        $curlOptions[CURLOPT_HTTPHEADER] = $headerArray;
         $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_STRING);
         $handle->setOptions($curlOptions);
-        $curlOptions->setOptions($request->getCurlOptions());        
+        $handle->setOptions($request->getHandleOptions());        
         
         return $handle;
     }

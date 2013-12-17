@@ -1,22 +1,20 @@
 <?php
-namespace Yjv\HttpQueue\Curl;
+namespace Yjv\HttpQueue\Connection;
 
-use Yjv\HttpQueue\Connection\FinishedConnectionInformationInterface;
-
-class FinishedHandleInformation implements FinishedConnectionInformationInterface
+class FinishedHandleInformation implements FinishedHandleInformationInterface
 {
     protected $handle;
     protected $result;
     protected $message;
     
-    public function __construct(CurlHandle $handle, $result, $message)
+    public function __construct(ConnectionHandleInterface $handle, $result, $message)
     {
         $this->handle = $handle;
         $this->result = $result;
         $this->message = $message;
     }
     
-    public function getConnection()
+    public function getHandle()
     {
         return $this->handle;
     }

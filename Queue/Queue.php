@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Connection\HandleObserverInterface;
+
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
@@ -37,25 +39,18 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class Queue implements QueueInterface, HandleDelegateInterface
+class Queue implements QueueInterface, HandleObserverInterface
 {
     protected $pending;
     protected $responses;
-    protected $handleMap;
-    protected $multiConnection;
-    protected $dispatcher;
+    protected $config;
     protected $sendCalls = 0;
-    protected $requestMediator;
     
-    public function __construct(
-        MultiConnectionInterface $multiConnection = null, 
-        EventDispatcherInterface $dispatcher = null
-    ) {
+    public function __construct(QueueConfigInterface $config)
+    {
         $this->pending = new \SplObjectStorage();
-        $this->handleMap = new RequestResponseConnectionMap();
         $this->responses = new \SplObjectStorage();
-        $this->multiConnection = $multiConnection ?: new CurlMulti();
-        $this->dispatcher = $dispatcher ?: new EventDispatcher();
+        $this->config = $config;
     }
     
     public function queue(RequestInterface $request)
@@ -80,7 +75,7 @@ class Queue implements QueueInterface, HandleDelegateInterface
         }
 
         $this->queuePendingRequests();
-        $this->executeConections();   
+        $this->executeHandles();   
 
         $this->sendCalls--;
         
@@ -92,52 +87,37 @@ class Queue implements QueueInterface, HandleDelegateInterface
         }
     }
     
-    public function getMultiConnection()
+    public function getConfig()
     {
-        return $this->multiConnection;
+        return $this->config;
     }
     
     public function addEventListener($eventName, $listener, $priority = 0)
     {
-        $this->dispatcher->addListener($eventName, $listener, $priority);
+        $this->config->getEventDispatcher()->addListener($eventName, $listener, $priority);
         return $this;
     }
     
     public function addEventSubscriber(EventSubscriberInterface $subscriber)
     {
-        $this->dispatcher->addSubscriber($subscriber);
+        $this->config->getEventDispatcher()->addSubscriber($subscriber);
         return $this;
-    }
-    
-    public function getResponse(RequestInterface $request)
-    {
-        if (!isset($this->responses[$request])) {
-            
-            return array();
-        }
-        
-        return $this->responses[$request];
-    }
-    
-    public function getHandleMap()
-    {
-        return $this->handleMap;
     }
     
     public function handleEvent($name, ConnectionHandleInterface $handle, array $args)
     {
-        $this->dispatcher->dispatch(QueueEvents::HANDLE_EVENT, new HandleEvent($name, $handle, $args));
+        $this->config->getEventDispatcher()->dispatch(QueueEvents::HANDLE_EVENT, new HandleEvent($name, $handle, $args));
     }
 
     protected function queuePendingRequests()
     {
         foreach ($this->pending as $pending) {
             
-            $handle = $pending->createHandle()
-            ;
-            
-            $this->handleMap->setRequest($handle, $pending);
-            $this->multiConnection->addConnection($handle);
+            $handle = $this->config->getHandleFactory()->createHandle($pending);
+            $handle->setObserver($this);
+            $this->config->getResponseFactory()->registerHandle($handle, $pending);
+            $this->config->getHandleMap()->setRequest($handle, $pending);
+            $this->config->getMultiHandle()->addHandle($handle);
             $this->pending->detach($pending);
         }
     }
@@ -145,15 +125,15 @@ class Queue implements QueueInterface, HandleDelegateInterface
     /**
      * Execute and select curl handles
      */
-    protected function executeConnections()
+    protected function executeHandles()
     {
         // The first curl_multi_select often times out no matter what, but is usually required for fast transfers
         $active = false;
         do {
-            while ($this->multiConnection->execute($active));
+            while ($this->config->getMultiHandle()->execute($active));
             
             $this->processResults();
-            $this->multiConnection->select(1);
+            $this->config->getMultiHandle()->select(1);
         } while ($active);
     }
     
@@ -162,29 +142,24 @@ class Queue implements QueueInterface, HandleDelegateInterface
     */
     protected function processResults()
     {
-        while ($done = $this->multiConnection->getFinishedConnectionInformation()) {
+        while ($done = $this->config->getMultiHandle()->getFinishedHandleInformation()) {
 
             $handle = $done->getHandle();
-            $this->multiConnection->removeConnection($handle);
+            $this->config->getMultiHandle()->removeHandle($handle);
             $handle->close();
-            $request = $this->handleMap->getRequest($handle);
-            $response = $this->handleMap->getResponse($handle);
+            $request = $this->config->getHandleMap()->getRequest($handle);
+            $response = $this->config->getResponseFactory()->createResponse($handle);
             
             $event = new RequestEvent($this, $request, $response);
     
-            if ($done->getResult() !== CurlMultiInterface::STATUS_OK) {
-        
-                $this->dispatcher->dispatch(RequestEvents::CURL_ERROR, $event);
-            }
-    
-            $this->dispatcher->dispatch(RequestEvents::COMPLETE, $event);
+            $this->config->getEventDispatcher()->dispatch(RequestEvents::COMPLETE, $event);
             
             if ($response) {
 
                 $this->responses->attach($response);
             }
             
-            $this->handleMap->clear($handle);
+            $this->config->getHandleMap()->clear($handle);
         }
     }
 }

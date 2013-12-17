@@ -35,6 +35,11 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
         return $this->read($lengthOfDataRead);
     }
     
+    public function getContentType()
+    {
+        
+    }
+    
     protected function attemptRewind()
     {
         if ($this->isSeekable()) {

@@ -1,12 +1,17 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
+use Yjv\HttpQueue\Connection\FinishedHandleInformation;
+
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
-use Yjv\HttpQueue\Connnection\MultiHandleInterface;
+use Yjv\HttpQueue\Connection\MultiHandleInterface;
 
 class CurlMulti implements MultiHandleInterface
 {
+    const STATUS_OK = CURLM_OK;
+    const STATUS_PERFORMING = CURLM_CALL_MULTI_PERFORM;
+    
     protected $resource;
     protected $handles = array();
     protected $ignoreTimeout = true;
@@ -21,7 +26,7 @@ class CurlMulti implements MultiHandleInterface
         $this->close();
     }
     
-    public function addConnection(ConnectionHandleInterface $handle)
+    public function addHandle(ConnectionHandleInterface $handle)
     {
         curl_multi_add_handle($this->resource, $handle->getResource());
         $this->handles[(int)$handle->getResource()] = $handle;
@@ -29,7 +34,7 @@ class CurlMulti implements MultiHandleInterface
         return $this;
     }
     
-    public function removeConnection(ConnectionHandleInterface $handle)
+    public function removeHandle(ConnectionHandleInterface $handle)
     {
         curl_multi_remove_handle($this->resource, $handle->getResource());
         unset($this->handles[(int)$handle->getResource()]);
@@ -63,7 +68,7 @@ class CurlMulti implements MultiHandleInterface
         return $result == -1 ? 0 : $result;
     }
     
-    public function getFinishedConnectionInformation(&$finishedConnectionCount = 0)
+    public function getFinishedHandleInformation(&$finishedConnectionCount = 0)
     {
         $info = curl_multi_info_read($this->resource, $finishedConnectionCount);
         
@@ -98,12 +103,12 @@ class CurlMulti implements MultiHandleInterface
      */
     protected function checkExecuteResult($executeResultCode)
     {
-        if ($executeResultCode == CurlMultiInterface::STATUS_PERFORMING) {
+        if ($executeResultCode == self::STATUS_PERFORMING) {
     
             return true;
         }
     
-        if ($executeResultCode == CurlMultiInterface::STATUS_OK) {
+        if ($executeResultCode == self::STATUS_OK) {
     
             return false;
         }

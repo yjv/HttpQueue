@@ -1,6 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\RequestResponseHandleMap;
+
+use Yjv\HttpQueue\Curl\CurlHandle;
+
 use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Response\HeaderReceivedEvent;
@@ -17,31 +21,29 @@ use Yjv\HttpQueue\Response\Response;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
-class CurlResponseFactory implements ResponseBuilderInterface
+class CurlResponseFactory implements ResponseFactoryInterface
 {
-    protected $queue;
-    protected $handles;
+    protected $payloadFactory;
+    protected $handleMap;
     
     public function __construct(DestinationPayloadFactoryInterface $payloadFactory = null)
     {
         $this->payloadFactory = $payloadFactory ? $payloadFactory : new StreamDestinationPayloadFactory();
-    }
-    
-    public function setQueue(QueueInterface $queue)
-    {
-        $this->queue = $queue;
-        return $this;
+        $this->handleMap = new RequestResponseHandleMap();
     }
     
     public function registerHandle(ConnectionHandleInterface $handle, RequestInterface $request)
     {
+        $this->handleMap->setRequest($handle, $request);
         $handle->setOption(CURLOPT_HEADERFUNCTION, array($this, 'writeHeader'));
         return $this;
     }
     
-    public function getResponse(ConnectionHandleInterface $handle)
+    public function createResponse(ConnectionHandleInterface $handle)
     {
-        return $this->queue->getConfig()->getHandleMap()->getResponse($handle);
+        $response = $this->handleMap->getResponse($handle);
+        $this->handleMap->clear($handle);
+        return $response;
     }
     
     /**
@@ -52,39 +54,41 @@ class CurlResponseFactory implements ResponseBuilderInterface
      *
      * @return int
      */
-    public function writeHeader(CurlHandleInterface $handle, $header)
+    public function writeHeader(CurlHandle $handle, $header)
     {
         static $normalize = array("\r", "\n");
         $length = strlen($header);
         $header = str_replace($normalize, '', $header);
-        
+
         if (strpos($header, 'HTTP/') === 0) {
     
             $startLine = explode(' ', $header, 3);
             $code = $startLine[1];
             $status = isset($startLine[2]) ? $startLine[2] : '';
     
-            $response = new Response($code, array());
-            $this->queue->getConfig()->getHandleMap()->setResponse($handle, $response);
-            $this->queue->getConfig()->getEventDispatcher()->dispatch(
-                ResponseEvents::RECEIVE_STATUS_LINE, 
-                new StatusLineRecievedEvent(
-                    $this->queue, 
-                    $this->queue->getConfig()->getHandleMap()->getRequest($handle), 
-                    $response, 
-                    $code, 
-                    $status
-                )
-            );
+            $response = new Response($code);
             
+            if (!$handle->getOption(CURLOPT_NOBODY, false)) {
+            
+                $body = $this->payloadFactory->getDestinationPayload(
+                    $handle, 
+                    $this->handleMap->getRequest($handle), 
+                    $response
+                );
+                $handle->setDestinationStream($body);
+                $response->setBody($body);
+            }
+            
+            $this->handleMap->setResponse($handle, $response);
             return $length;
         } 
         
         //if somehow no request is there return 0
-        if (!$response = $this->queue->getConfig()->getHandleMap()->getResponse($handle)) {
+        if (!$response = $this->handleMap->getResponse($handle)) {
             
             return 0;
         }
+        
         
         if (!$pos = strpos($header, ':')) {
             
@@ -95,16 +99,6 @@ class CurlResponseFactory implements ResponseBuilderInterface
                 trim(substr($header, 0, $pos)),
                 trim(substr($header, $pos + 1)),
                 false
-        );
-        
-        $this->queue->getConfig()->getEventDispatcher()->dispatch(
-            ResponseEvents::HEADER_RECEIVED,
-            new HeaderReceivedEvent(
-                $this->queue, 
-                $this->queue->getConfig()->getHandleMap()->getRequest($handle), 
-                $response, 
-                $header
-            )
         );
     
         return $length;

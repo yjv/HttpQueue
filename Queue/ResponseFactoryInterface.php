@@ -5,9 +5,8 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
-interface ResponseBuilderInterface
+interface ResponseFactoryInterface
 {
     public function registerHandle(ConnectionHandleInterface $handle, RequestInterface $request);
-    public function getResponse(ConnectionHandleInterface $handle);
-    public function setQueue(QueueInterface $queue);
+    public function createResponse(ConnectionHandleInterface $handle);
 }

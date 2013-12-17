@@ -1,6 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
+use Yjv\HttpQueue\Connection\HandleObserverInterface;
+
+use Yjv\HttpQueue\Connection\SourcePayloadInterface;
+
 use Yjv\HttpQueue\Queue\HandleDelegateInterface;
 
 use Yjv\HttpQueue\Connection\SourceStreamInterface;
@@ -13,7 +17,7 @@ class CurlHandle implements ConnectionHandleInterface
 {
     protected $resource;
     protected $options = array();
-    protected $delegate;
+    protected $observer;
     
     public function __construct()
     {
@@ -56,6 +60,11 @@ class CurlHandle implements ConnectionHandleInterface
     public function getOptions()
     {
         return $this->options;
+    }
+    
+    public function getOption($name, $default = null)
+    {
+        return isset($this->options[$name]) ? $this->options[$name] : $default;
     }
     
     public function execute()
@@ -104,23 +113,23 @@ class CurlHandle implements ConnectionHandleInterface
         return $this;
     }
     
-    public function setDelegate(HandleDelegateInterface $delegate)
+    public function setObserver(HandleObserverInterface $observer)
     {
-        $this->delegate = $delegate;
+        $this->observer = $observer;
         return $this;
     }
     
-    public function getDelegate()
+    public function getObserver()
     {
-        return $this->delegate;
+        return $this->observer;
     }
     
     protected function wrapCallbacks(array $options)
     {
         $curlObject = $this;
         
-        foreach (CurlEvents::getCallbackEvents() as $callbackOption) {
-            
+        foreach (CurlEvents::getCallbackEvents() as $callbackOption => $eventName) {
+
             if (isset($options[$callbackOption])) {
                 
                 $internalFunction = $options[$callbackOption];
@@ -128,7 +137,7 @@ class CurlHandle implements ConnectionHandleInterface
                 {
                     $args = func_get_args();
                     array_shift($args);
-                    $curlObject->getDelegate()->handleEvent(
+                    $curlObject->getObserver()->handleEvent(
                         CurlEvents::getCallbackEvents($callbackOption), 
                         $curlObject, 
                         $args

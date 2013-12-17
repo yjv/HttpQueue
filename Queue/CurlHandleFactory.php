@@ -123,7 +123,7 @@ class CurlHandleFactory implements HandleFactoryInterface
         $curlOptions[CURLOPT_HTTPHEADER] = $headerArray;
         $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_STRING);
         $handle->setOptions($curlOptions);
-        $handle->setOptions($request->getHandleOptions());        
+        $handle->setOptions($request->getHandleOptions());   
         
         return $handle;
     }

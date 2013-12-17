@@ -9,5 +9,5 @@ use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 interface DestinationPayloadFactoryInterface
 {
-    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response);
+    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request);
 }

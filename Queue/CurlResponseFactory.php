@@ -60,6 +60,11 @@ class CurlResponseFactory implements ResponseFactoryInterface
         $length = strlen($header);
         $header = str_replace($normalize, '', $header);
 
+        if (!$header) {
+            
+            return $length;
+        }
+        
         if (strpos($header, 'HTTP/') === 0) {
     
             $startLine = explode(' ', $header, 3);

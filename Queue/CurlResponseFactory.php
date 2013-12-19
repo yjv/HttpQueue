@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Connection\DestinationStreamInterface;
+
 use Yjv\HttpQueue\RequestResponseHandleMap;
 
 use Yjv\HttpQueue\Curl\CurlHandle;
@@ -26,9 +28,9 @@ class CurlResponseFactory implements ResponseFactoryInterface
     protected $payloadFactory;
     protected $handleMap;
     
-    public function __construct(DestinationPayloadFactoryInterface $payloadFactory = null)
+    public function __construct(DestinationStreamFactoryInterface $payloadFactory = null)
     {
-        $this->payloadFactory = $payloadFactory ? $payloadFactory : new StreamDestinationPayloadFactory();
+        $this->payloadFactory = $payloadFactory ? $payloadFactory : new TempDestinationStreamFactory();
         $this->handleMap = new RequestResponseHandleMap();
     }
     
@@ -59,42 +61,44 @@ class CurlResponseFactory implements ResponseFactoryInterface
         static $normalize = array("\r", "\n");
         $length = strlen($header);
         $header = str_replace($normalize, '', $header);
-
-        if (!$header) {
-            
-            return $length;
-        }
         
+        //status line
         if (strpos($header, 'HTTP/') === 0) {
     
             $startLine = explode(' ', $header, 3);
             $code = $startLine[1];
             $status = isset($startLine[2]) ? $startLine[2] : '';
     
-            $response = new Response($code);
-            
-            if (!$handle->getOption(CURLOPT_NOBODY, false)) {
-            
-                $body = $this->payloadFactory->getDestinationPayload(
-                    $handle, 
-                    $this->handleMap->getRequest($handle), 
-                    $response
-                );
-                $handle->setDestinationStream($body);
-                $response->setBody($body);
-            }
-            
-            $this->handleMap->setResponse($handle, $response);
+            $this->handleMap->setResponse($handle, new Response($code));
             return $length;
         } 
         
-        //if somehow no request is there return 0
+        //if somehow no response is there return 0
         if (!$response = $this->handleMap->getResponse($handle)) {
             
             return 0;
         }
+
+        //empty line signifies end of headers and beginning of the body
+        if ($header === '') {
+            
+            if (!$handle->getOption(CURLOPT_NOBODY, false)) {
+            
+                $body = $this->payloadFactory->getDestinationStream(
+                    $handle, 
+                    $this->handleMap->getRequest($handle), 
+                    $response
+                );
+                
+                $body->setHandle($handle);
+                $handle->setDestinationStream($body);
+                $response->setBody($body);
+            }
+            
+            return $length;
+        }
         
-        
+        //if this isnt a normal header return 0
         if (!$pos = strpos($header, ':')) {
             
             return 0;

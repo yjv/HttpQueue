@@ -3,8 +3,6 @@ namespace Yjv\HttpQueue\Response;
 
 use Yjv\HttpQueue\Connection\PayloadInterface;
 
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-
 class Response implements ResponseInterface
 {
     protected $code;
@@ -16,6 +14,11 @@ class Response implements ResponseInterface
         $this->code = $code;
         $this->setHeaders($headers);
         $this->body = $body;
+    }
+    
+    public function __toString()
+    {
+        return $this->headers . "\r\n" . $this->body;
     }
     
     /**

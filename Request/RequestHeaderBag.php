@@ -7,8 +7,8 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 class RequestHeaderBag extends HeaderBag
 {
-    const COOKIES_STRING           = 'string';
-    const COOKIES_ARRAY          = 'array';
+    const COOKIES_HEADER           = 'header';
+    const COOKIES_ARRAY            = 'array';
 
     /**
      * @var array
@@ -25,14 +25,9 @@ class RequestHeaderBag extends HeaderBag
      */
     public function __toString()
     {
-        $cookies = '';
-        foreach ($this->getCookies() as $cookie) {
-            $cookies .= 'Set-Cookie: '.$cookie."\r\n";
-        }
-
         ksort($this->headerNames);
 
-        return parent::__toString().$cookies;
+        return parent::__toString();
     }
 
     /**
@@ -47,10 +42,17 @@ class RequestHeaderBag extends HeaderBag
     
     public function allPreserveCaseFlattened()
     {
-        return array_map(function(array $value)
-        {
-            return implode(';', $value);
-        }, $this->allPreserveCase());
+        $headers = array();
+        
+        foreach ($this->allPreserveCase() as $name => $values) {
+            
+            foreach ($values as $value) {
+
+                $headers[] = sprintf('%s: %s', $name, $value);
+            }
+        }
+        
+        return $headers;
     }
 
     /**
@@ -159,4 +161,16 @@ class RequestHeaderBag extends HeaderBag
     {
         $this->setCookie(new Cookie($name));
     }
+    
+    protected function updateCookieHeader()
+    {
+        if (empty($this->cookies)) {
+            
+            $this->remove('Cookie');
+            return;
+        }
+        
+        $this->set('Cookie', $this->getCookies(self::COOKIES_HEADER), true);
+     }
 }
+

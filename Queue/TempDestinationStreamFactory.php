@@ -9,9 +9,9 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Payload\StreamPayload;
 
-class TempDestinationStreamFactory implements DestinationStreamFactoryInterface
+class TempDestinationStreamFactory implements DestinationPayloadFactoryInterface
 {
-    public function getDestinationStream(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response)
+    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response)
     {
         return new StreamPayload(fopen('php://temp', 'r+'));
     }

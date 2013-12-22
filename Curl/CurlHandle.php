@@ -2,15 +2,9 @@
 namespace Yjv\HttpQueue\Curl;
 
 use Yjv\HttpQueue\Connection\HandleObserverInterface;
-
-use Yjv\HttpQueue\Connection\SourcePayloadInterface;
-
-use Yjv\HttpQueue\Queue\HandleDelegateInterface;
-
-use Yjv\HttpQueue\Connection\SourceStreamInterface;
-
-use Yjv\HttpQueue\Connection\DestinationStreamInterface;
-
+use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
+use Yjv\HttpQueue\Connection\Payload\SourceStreamInterface;
+use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 class CurlHandle implements ConnectionHandleInterface
@@ -83,25 +77,21 @@ class CurlHandle implements ConnectionHandleInterface
         return $this;
     }
     
-    public function setDestinationStream(DestinationStreamInterface $destinationStream)
+    public function setDestinationPayload(DestinationPayloadInterface $destinationPayload)
     {
-        $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationStream)
+        $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationPayload)
         {
-            return $destinationStream->writeStream($data);
-        });
-        
-        return $this;
-    }
-    
-    public function setSourceStream(SourceStreamInterface $sourceStream)
-    {
-        $this->setOptions(array(
-            CURLOPT_UPLOAD => true,
-            CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)
-            {
-                return $sourceStream->readStream($amountOfDataToRead);
+            if ($destinationPayload instanceof DestinationStreamInterface) {
+
+                return $destinationStream->writeStream($data);
+            } else {
+                
+                static $receivedData = '';
+                $receivedData .= $data;
+                $destinationPayload->setPayloadData($receivedData);
+                return strlen($data);
             }
-        ));
+        });
         
         return $this;
     }
@@ -109,7 +99,21 @@ class CurlHandle implements ConnectionHandleInterface
     public function setSourcePayload(SourcePayloadInterface $sourcePayload)
     {
         $sourcePayload->setHandle($this);
-        $this->setOption(CURLOPT_POSTFIELDS, $sourcePayload->getPayloadContent());
+        
+        if ($sourcePayload instanceof SourceStreamInterface) {
+            
+            $this->setOptions(array(
+                CURLOPT_UPLOAD => true,
+                CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)
+                {
+                    return $sourceStream->readStream($amountOfDataToRead);
+                }
+            ));
+        } else {
+            
+            $this->setOption(CURLOPT_POSTFIELDS, $sourcePayload->getPayloadContent());
+        }
+        
         return $this;
     }
     

@@ -84,14 +84,14 @@ class CurlResponseFactory implements ResponseFactoryInterface
             
             if (!$handle->getOption(CURLOPT_NOBODY, false)) {
             
-                $body = $this->payloadFactory->getDestinationStream(
+                $body = $this->payloadFactory->getDestinationPayload(
                     $handle, 
                     $this->handleMap->getRequest($handle), 
                     $response
                 );
                 
                 $body->setHandle($handle);
-                $handle->setDestinationStream($body);
+                $handle->setDestinationPayload($body);
                 $response->setBody($body);
             }
             

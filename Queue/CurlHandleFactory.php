@@ -20,13 +20,13 @@ class CurlHandleFactory implements HandleFactoryInterface
         $headers = clone $request->getHeaders();
         $handle = new CurlHandle();
         $curlOptions = array(
-                CURLOPT_CONNECTTIMEOUT => 150,
-                CURLOPT_RETURNTRANSFER => false,
-                CURLOPT_HEADER         => false,
-                // Verifies the authenticity of the peer's certificate
-                CURLOPT_SSL_VERIFYPEER => 1,
-                // Certificate must indicate that the server is the server to which you meant to connect
-                CURLOPT_SSL_VERIFYHOST => 2
+            CURLOPT_CONNECTTIMEOUT => 150,
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_HEADER         => false,
+            // Verifies the authenticity of the peer's certificate
+            CURLOPT_SSL_VERIFYPEER => 1,
+            // Certificate must indicate that the server is the server to which you meant to connect
+            CURLOPT_SSL_VERIFYHOST => 2
         );
         
         if (defined('CURLOPT_PROTOCOLS')) {
@@ -50,16 +50,6 @@ class CurlHandleFactory implements HandleFactoryInterface
         
         $method = $request->getMethod();
         
-        //Add CURLOPT_ENCODING if Accept-Encoding header is provided
-        if ($headers->has('Accept-Encoding')) {
-            
-            $Headers->set('Accept', '');
-            $curlOptions[CURLOPT_ENCODING] = (string)$headers->get('Accept-Encoding');
-
-            // Let cURL set the Accept-Encoding header, prevents duplicate values
-            $headers->remove('Accept-Encoding');
-        }
-        
         if ($method == RequestInterface::METHOD_GET) {
             
             $curlOptions[CURLOPT_HTTPGET] = true;
@@ -73,38 +63,32 @@ class CurlHandleFactory implements HandleFactoryInterface
             $curlOptions[CURLOPT_NOBODY] = true;
         }
 
-        if ($request->getBody() instanceof PayloadInterface) {
+        if ($request->getBody() instanceof SourcePayloadInterface) {
              
             $payload = $request->getBody();
+            $payload->setHandle($handle);
+            $handle->setSourcePayload($payload);
             
             if ($payload->getContentType()) {
 
                 $headers->set('Content-Type', $payload->getContentType());
             }
             
-            $payload->setHandle($handle);
-            
-            if($payload instanceof SourceStreamInterface) {
-            
-                $handle->setSourceStream($payload);
-                
-                if ($headers->has('Content-Length')) {
-                
-                    $curlOptions[CURLOPT_INFILESIZE] = (int)(string)$headers->get('Content-Length');
-                }
+            if ($payload->getContentLength()) {
+
+                $headers->set('Content-Length', $payload->getContentLength());
             }
             
-            if ($payload instanceof SourcePayloadInterface) {
-            
-                $handle->setSourcePayload($payload);
-                
-                if (!$headers->has('Content-Type')) {
-                
-                    $headers->set('Content-type', '');
-                }
-            }
-            
-            $headers->remove('Content-Length');
+        }
+
+        //Add CURLOPT_ENCODING if Accept-Encoding header is provided
+        if ($headers->has('Accept-Encoding')) {
+        
+            $headers->set('Accept', '');
+            $curlOptions[CURLOPT_ENCODING] = (string)$headers->get('Accept-Encoding');
+        
+            // Let cURL set the Accept-Encoding header, prevents duplicate values
+            $headers->remove('Accept-Encoding');
         }
         
         // If the Expect header is not present, prevent curl from adding it
@@ -113,23 +97,11 @@ class CurlHandleFactory implements HandleFactoryInterface
             $headers->set('Expect', '');
         } 
                
-        $headerArray = array();
-        
-        foreach ($headers->allPreserveCase() as $name => $headerValues) {
-            
-            $headerArray[] = sprintf('%s: %s', $name, implode('; ', $headerValues));
-        }
-        
-        $curlOptions[CURLOPT_HTTPHEADER] = $headerArray;
-        $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_STRING);
+        $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCaseFlattened();
+        $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_HEADER);
         $handle->setOptions($curlOptions);
         $handle->setOptions($request->getHandleOptions());   
         
         return $handle;
-    }
-    
-    public function setQueue(QueueInterface $queue)
-    {
-        $this->queue = $queue;
     }
 }

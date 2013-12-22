@@ -7,7 +7,7 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
-interface DestinationStreamFactoryInterface
+interface DestinationPayloadFactoryInterface
 {
-    public function getDestinationStream(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response);
+    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response);
 }

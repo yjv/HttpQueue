@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Response\ResponseEvent;
+
 use Yjv\HttpQueue\Connection\HandleObserverInterface;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
@@ -106,7 +108,16 @@ class Queue implements QueueInterface, HandleObserverInterface
     
     public function handleEvent($name, ConnectionHandleInterface $handle, array $args)
     {
-        $this->config->getEventDispatcher()->dispatch(QueueEvents::HANDLE_EVENT, new HandleEvent($name, $handle, $args));
+        $this->config->getEventDispatcher()->dispatch(
+            RequestEvents::HANDLE_EVENT, 
+            new HandleEvent(
+                $this, 
+                $this->config->getHandleMap()->getRequest($handle), 
+                $handle, 
+                $name, 
+                $args
+            )
+        );
     }
 
     protected function queuePendingRequests()
@@ -115,10 +126,10 @@ class Queue implements QueueInterface, HandleObserverInterface
             
             $handle = $this->config->getHandleFactory()->createHandle($pending);
             $handle->setObserver($this);
-            $this->config->getResponseFactory()->registerHandle($handle, $pending);
             $this->config->getHandleMap()->setRequest($handle, $pending);
-            $this->config->getMultiHandle()->addHandle($handle);
             $this->pending->detach($pending);
+            $this->config->getResponseFactory()->registerHandle($handle, $pending);
+            $this->config->getMultiHandle()->addHandle($handle);
         }
     }
     
@@ -150,12 +161,10 @@ class Queue implements QueueInterface, HandleObserverInterface
             $request = $this->config->getHandleMap()->getRequest($handle);
             $response = $this->config->getResponseFactory()->createResponse($handle);
             
-            $event = new RequestEvent($this, $request, $response);
-    
-            $this->config->getEventDispatcher()->dispatch(RequestEvents::COMPLETE, $event);
-            
             if ($response) {
 
+                $event = new ResponseEvent($this, $request, $response);
+                $this->config->getEventDispatcher()->dispatch(RequestEvents::COMPLETE, $event);
                 $this->responses->attach($response);
             }
             

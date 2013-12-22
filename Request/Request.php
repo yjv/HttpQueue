@@ -1,22 +1,26 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
+use Yjv\HttpQueue\Connection\PayloadInterface;
+
 use Yjv\HttpQueue\Url\Url;
 
 class Request implements RequestInterface
 {
     protected $handleOptions = array();
+    protected $options = array();
     protected $url;
     protected $method;
     protected $headers;
     protected $body;
     protected $trackProgress = false;
     
-    public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), $body = '')
+    public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), PayloadInterface $body = null)
     {
         $this->setUrl($url);
         $this->setMethod($method);
         $this->setHeaders($headers);
+        $this->body = $body;
     }
 
     public function setHandleOption($name, $value)
@@ -80,17 +84,23 @@ class Request implements RequestInterface
     
     public function getTrackProgress()
     {
-        return !$this->getHandleOption(CURLOPT_NOPROGRESS, true);
+        return $this->trackProgress;
     }
     
     public function setTrackProgress($trackProgress)
     {
-        $this->setHandleOption(CURLOPT_NOPROGRESS, !$trackProgress);
+        $this->trackProgress = $trackProgress;
         return $this;
     }
     
     public function getBody()
     {
         return $this->body;
+    }
+    
+    public function setBody(PayloadInterface $body)
+    {
+        $this->body = $body;
+        return $this;
     }
 }

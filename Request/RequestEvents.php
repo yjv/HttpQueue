@@ -4,7 +4,7 @@ namespace Yjv\HttpQueue\Request;
 class RequestEvents
 {
     const ERROR = 'request.error';
-    const CURL_ERROR = 'request.curl_error';
+    const CREATE_HANDLE = 'request.create_handle';
     const COMPLETE = 'request.complete';
-    const PROGRESS = 'request.progress';
+    const HANDLE_EVENT = 'request.handle_event';
 }

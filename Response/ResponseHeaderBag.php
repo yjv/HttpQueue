@@ -20,6 +20,68 @@ class ResponseHeaderBag extends HeaderBag
     const COOKIES_FLAT_ARRAY       = 'flat_array';
     
     /**
+     * {@inheritdoc}
+     *
+     * @api
+     */
+    public function set($key, $values, $replace = true)
+    {
+        parent::set($key, $values, $replace);
+
+        // ensure the cache-control header has sensible defaults
+        if (in_array($uniqueKey, array('cache-control', 'etag', 'last-modified', 'expires'))) {
+            $computed = $this->computeCacheControlValue();
+            $this->headers['cache-control'] = array($computed);
+            $this->headerNames['cache-control'] = 'Cache-Control';
+            $this->computedCacheControl = $this->parseCacheControl($computed);
+        }
+    }
+    
+    /**
+     * {@inheritdoc}
+     *
+     * @api
+     */
+    public function remove($key)
+    {
+        parent::remove($key);
+
+        if ('cache-control' === $uniqueKey) {
+            $this->computedCacheControl = array();
+        }
+    }
+    
+    /**
+     * {@inheritdoc}
+     *
+     * @api
+     */
+    public function replace(array $headers = array())
+    {
+        parent::replace($headers);
+
+        if (!isset($this->headers['cache-control'])) {
+            $this->set('Cache-Control', '');
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function hasCacheControlDirective($key)
+    {
+        return array_key_exists($key, $this->computedCacheControl);
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function getCacheControlDirective($key)
+    {
+        return array_key_exists($key, $this->computedCacheControl) ? $this->computedCacheControl[$key] : null;
+    }
+        
+    /**
      * Sets a cookie.
      *
      * @param Cookie $cookie
@@ -171,5 +233,37 @@ class ResponseHeaderBag extends HeaderBag
                 $metadata['httponly']
             ));
         }
+    }
+
+    /**
+     * Returns the calculated value of the cache-control header.
+     *
+     * This considers several other headers and calculates or modifies the
+     * cache-control header to a sensible, conservative value.
+     *
+     * @return string
+     */
+    protected function computeCacheControlValue()
+    {
+        if (!$this->cacheControl && !$this->has('ETag') && !$this->has('Last-Modified') && !$this->has('Expires')) {
+            return 'no-cache';
+        }
+    
+        if (!$this->cacheControl) {
+            // conservative by default
+            return 'private, must-revalidate';
+        }
+    
+        $header = $this->getCacheControlHeader();
+        if (isset($this->cacheControl['public']) || isset($this->cacheControl['private'])) {
+            return $header;
+        }
+    
+        // public if s-maxage is defined, private otherwise
+        if (!isset($this->cacheControl['s-maxage'])) {
+            return $header.', private';
+        }
+    
+        return $header;
     }
 }

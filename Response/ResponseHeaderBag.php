@@ -192,13 +192,8 @@ class ResponseHeaderBag extends HeaderBag
     {
         $this->cookies = array();
         
-        foreach ($this->get('Set-Cookie', '', true) as $header) {
+        foreach ($this->get('Set-Cookie', null, true) as $header) {
 
-            list($name, $value) = explode('=', $header, 2);
-            $values = explode(';', $value);
-            
-            $value = array_shift($values);
-            
             $metadata = array(
                 'expires' => 0,
                 'path' => '/',
@@ -207,20 +202,12 @@ class ResponseHeaderBag extends HeaderBag
                 'httponly' => false
             );
             
-            foreach ($values as $metadataString) {
-                
-                $parsedMetadataString = explode('=', $metadataString, 2);
-                $parsedMetadataString[0] = strtolower(trim($parsedMetadataString[0]));
-                
-                if (!isset($parsedMetadataString[1])) {
-                    
-                    $parsedMetadataString[1] = true;
-                } else {
-                    
-                    $parsedMetadataString[1] = trim($parsedMetadataString[1]);
-                }
-                
-                $metadata[$parsedMetadataString[0]] = $parsedMetadataString[1];
+            preg_match_all('#([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^;]*)))?#', $header, $matches, PREG_SET_ORDER);
+            
+            list($useless, $name, $useless, $value) = array_shift($matches);
+            
+            foreach ($matches as $match) {
+                $metadata[strtolower($match[1])] = isset($match[3]) ? $match[3] : (isset($match[2]) ? $match[2] : true);
             }
             
             $this->setCookie(new Cookie(

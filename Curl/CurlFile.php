@@ -26,7 +26,7 @@ class CurlFile extends File implements CurlFileInterface
     
     public function getName()
     {
-        if ($this->name) {
+        if (!$this->name) {
             
             $extension = $this->getExtension();
             $this->name = $this->getBasename($extension ? '.'.$extension : '');
@@ -45,7 +45,7 @@ class CurlFile extends File implements CurlFileInterface
     {
         // PHP 5.5 introduced a CurlFile object that deprecates the old @filename syntax
         // See: https://wiki.php.net/rfc/curl-file-upload
-        if (function_exists('curl_file_create')) {
+        if (class_exists('CURLFile')) {
             
             return new \CURLFile(
                 $this->getRealPath(), 

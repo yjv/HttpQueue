@@ -66,7 +66,6 @@ class CurlHandleFactory implements HandleFactoryInterface
         if ($request->getBody() instanceof SourcePayloadInterface) {
              
             $payload = $request->getBody();
-            $payload->setHandle($handle);
             $handle->setSourcePayload($payload);
             
             if ($payload->getContentType()) {

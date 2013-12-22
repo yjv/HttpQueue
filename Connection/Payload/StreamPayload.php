@@ -1,13 +1,8 @@
 <?php
-namespace Yjv\HttpQueue\Payload;
+namespace Yjv\HttpQueue\Connection\Payload;
 
-use Yjv\HttpQueue\Connection\Payload\SourceStreamInterface;
-
-use Yjv\HttpQueue\Connection\Payload\DestinationStreamInterface;
-
+use Yjv\HttpQueue\Stream\Stream;
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
-
-use Guzzle\Stream\Stream;
 
 class StreamPayload extends Stream implements DestinationStreamInterface, SourceStreamInterface
 {
@@ -56,16 +51,6 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
     
     public function getContentLength()
     {
-    }
-    
-    public function truncate($size)
-    {
-        if ($this->isSeekable() && $this->isWritable()) {
-            
-            return ftruncate($this->stream, $size);
-        }
-        
-        return false;
     }
     
     protected function attemptRewind()

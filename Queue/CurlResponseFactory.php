@@ -90,7 +90,6 @@ class CurlResponseFactory implements ResponseFactoryInterface
                     $response
                 );
                 
-                $body->setHandle($handle);
                 $handle->setDestinationPayload($body);
                 $response->setBody($body);
             }

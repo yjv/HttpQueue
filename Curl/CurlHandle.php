@@ -79,6 +79,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setDestinationPayload(DestinationPayloadInterface $destinationPayload)
     {
+        $destinationPayload->setHandle($this);
         $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationPayload)
         {
             if ($destinationPayload instanceof DestinationStreamInterface) {

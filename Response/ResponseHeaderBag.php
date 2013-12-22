@@ -11,101 +11,165 @@
 
 namespace Yjv\HttpQueue\Response;
 
-use Symfony\Component\HttpFoundation\HeaderBag;
+use Yjv\HttpQueue\HeaderBag;
 
 use Symfony\Component\HttpFoundation\Cookie;
 
-use Symfony\Component\HttpFoundation\ResponseHeaderBag as BaseResponseHeaderBag;
-
-/**
- * ResponseHeaderBag is a container for Response HTTP headers.
- *
- * @author Fabien Potencier <fabien@symfony.com>
- *
- * @api
- */
-class ResponseHeaderBag extends BaseResponseHeaderBag
+class ResponseHeaderBag extends HeaderBag
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function __toString()
-    {
-        ksort($this->headerNames);
-
-        return HeaderBag::__toString();
-    }
-    
-    public function replace(array $headers = array())
-    {
-        $this->cookies = array();
-        parent::replace($headers);
-    }
+    const COOKIES_FLAT_ARRAY       = 'flat_array';
     
     /**
-     * {@inheritdoc}
+     * Sets a cookie.
+     *
+     * @param Cookie $cookie
      *
      * @api
      */
-    public function set($key, $values, $replace = true)
+    public function setCookie(Cookie $cookie)
     {
-        parent::set($key, $values, $replace);
+        $this->cookies[$cookie->getDomain()][$cookie->getPath()][$cookie->getName()] = $cookie;
+        $this->syncCookiesToHeaders();
+    }
 
-        $uniqueKey = strtr(strtolower($key), '_', '-');
-        
-        if ($uniqueKey == 'set-cookie') {
-            
-            if ($replace) {
-                
-                $this->cookies = array();
-            }
-            
-            foreach ((array)$values as $header) {
-                
-                $this->setCookie($this->parseSetCookie($header));
-            }
-        }
+    /**
+     * Clears a cookie in the browser
+     *
+     * @param string $name
+     * @param string $path
+     * @param string $domain
+     *
+     * @api
+     */
+    public function clearCookie($name)
+    {
+        $this->setCookie(new Cookie($name));
     }
     
-    protected function parseSetCookie($header)
+    /**
+     * Removes a cookie from the array, but does not unset it in the browser
+     *
+     * @param string $name
+     * @param string $path
+     * @param string $domain
+     *
+     * @api
+     */
+    public function removeCookie($name, $path = '/', $domain = null)
     {
-        list($name, $value) = explode('=', $header, 2);
-        $values = explode(';', $value);
-        
-        $value = array_shift($values);
-        
-        $metadata = array(
-            'expires' => 0,
-            'path' => '/',
-            'domain' => null,
-            'secure' => false,
-            'httponly' => false
-        );
-        
-        foreach ($values as $metadataString) {
-            
-            $parsedMetadataString = explode('=', $metadataString, 2);
-            $parsedMetadataString[0] = strtolower(trim($parsedMetadataString[0]));
-            
-            if (!isset($parsedMetadataString[1])) {
-                
-                $parsedMetadataString[1] = true;
-            } else {
-                
-                $parsedMetadataString[1] = trim($parsedMetadataString[1]);
+        if (null === $path) {
+            $path = '/';
+        }
+
+        unset($this->cookies[$domain][$path][$name]);
+
+        if (empty($this->cookies[$domain][$path])) {
+            unset($this->cookies[$domain][$path]);
+
+            if (empty($this->cookies[$domain])) {
+                unset($this->cookies[$domain]);
             }
+        }
+        $this->syncCookiesToHeaders();
+    }
+
+    /**
+     * Returns an array with all cookies
+     *
+     * @param string $format
+     *
+     * @throws \InvalidArgumentException When the $format is invalid
+     *
+     * @return array
+     *
+     * @api
+     */
+    public function getCookies($format = self::COOKIES_ARRAY)
+    {
+        if (!in_array($format, array(self::COOKIES_HEADER, self::COOKIES_ARRAY, self::COOKIES_FLAT_ARRAY))) {
+            throw new \InvalidArgumentException(sprintf('Format "%s" invalid (%s).', $format, implode(', ', array(self::COOKIES_HEADER, self::COOKIES_ARRAY, self::COOKIES_FLAT_ARRAY))));
+        }
+
+        if (self::COOKIES_ARRAY === $format) {
             
-            $metadata[$parsedMetadataString[0]] = $parsedMetadataString[1];
+            return $this->cookies;
         }
         
-        return new Cookie(
-            $name, 
-            $value,
-            $metadata['expires'],
-            $metadata['path'],
-            $metadata['domain'],
-            $metadata['secure'],
-            $metadata['httponly']
-        );
+        if (self::COOKIES_FLAT_ARRAY) {
+
+            $flattenedCookies = array();
+            foreach ($this->cookies as $path) {
+                foreach ($path as $cookies) {
+                    foreach ($cookies as $cookie) {
+                        $flattenedCookies[] = $cookie;
+                    }
+                }
+            }
+            
+            return $flattenedCookies;
+        }
+
+        return array_map(function(Cookie $cookie)
+        {
+            return (string)$cookie;
+        }, $this->cookies);
+    }
+
+    protected function syncCookiesToHeaders()
+    {
+        if (empty($this->cookies)) {
+
+            $this->remove('Set-Cookie');
+            return;
+        }
+
+        $this->set('Set-Cookie', $this->getCookies(self::COOKIES_HEADER), true);
+    }
+
+    protected function syncHeadersToCookies()
+    {
+        $this->cookies = array();
+        
+        foreach ($this->get('Set-Cookie', '', true) as $header) {
+
+            list($name, $value) = explode('=', $header, 2);
+            $values = explode(';', $value);
+            
+            $value = array_shift($values);
+            
+            $metadata = array(
+                'expires' => 0,
+                'path' => '/',
+                'domain' => null,
+                'secure' => false,
+                'httponly' => false
+            );
+            
+            foreach ($values as $metadataString) {
+                
+                $parsedMetadataString = explode('=', $metadataString, 2);
+                $parsedMetadataString[0] = strtolower(trim($parsedMetadataString[0]));
+                
+                if (!isset($parsedMetadataString[1])) {
+                    
+                    $parsedMetadataString[1] = true;
+                } else {
+                    
+                    $parsedMetadataString[1] = trim($parsedMetadataString[1]);
+                }
+                
+                $metadata[$parsedMetadataString[0]] = $parsedMetadataString[1];
+            }
+            
+            $this->setCookie(new Cookie(
+                $name, 
+                $value,
+                $metadata['expires'],
+                $metadata['path'],
+                $metadata['domain'],
+                $metadata['secure'],
+                $metadata['httponly']
+            ));
+        }
     }
 }

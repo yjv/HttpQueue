@@ -1,98 +1,12 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-use Symfony\Component\HttpFoundation\HeaderBag;
+use Yjv\HttpQueue\HeaderBag;
 
 use Symfony\Component\HttpFoundation\Cookie;
 
 class RequestHeaderBag extends HeaderBag
 {
-    const COOKIES_HEADER           = 'header';
-    const COOKIES_ARRAY            = 'array';
-
-    /**
-     * @var array
-     */
-    protected $cookies              = array();
-
-    /**
-     * @var array
-     */
-    protected $headerNames          = array();
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __toString()
-    {
-        ksort($this->headerNames);
-
-        return parent::__toString();
-    }
-
-    /**
-     * Returns the headers, with original capitalizations.
-     *
-     * @return array An array of headers
-     */
-    public function allPreserveCase()
-    {
-        return array_combine($this->headerNames, $this->headers);
-    }
-    
-    public function allPreserveCaseFlattened()
-    {
-        $headers = array();
-        
-        foreach ($this->allPreserveCase() as $name => $values) {
-            
-            foreach ($values as $value) {
-
-                $headers[] = sprintf('%s: %s', $name, $value);
-            }
-        }
-        
-        return $headers;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @api
-     */
-    public function replace(array $headers = array())
-    {
-        $this->headerNames = array();
-
-        parent::replace($headers);
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @api
-     */
-    public function set($key, $values, $replace = true)
-    {
-        parent::set($key, $values, $replace);
-
-        $uniqueKey = strtr(strtolower($key), '_', '-');
-        $this->headerNames[$uniqueKey] = $key;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @api
-     */
-    public function remove($key)
-    {
-        parent::remove($key);
-
-        $uniqueKey = strtr(strtolower($key), '_', '-');
-        unset($this->headerNames[$uniqueKey]);
-    }
-
     /**
      * Sets a cookie.
      *
@@ -103,9 +17,10 @@ class RequestHeaderBag extends HeaderBag
     public function setCookie(Cookie $cookie)
     {
         $this->cookies[$cookie->getName()] = $cookie;
+        $this->syncCookiesToHeaders();
         return $this;
     }
-
+    
     /**
      * Removes a cookie from the array, but does not unset it in the browser
      *
@@ -118,9 +33,10 @@ class RequestHeaderBag extends HeaderBag
     public function removeCookie($name)
     {
         unset($this->cookies[$name]);
+        $this->syncCookiesToHeaders();
         return $this;
     }
-
+    
     /**
      * Returns an array with all cookies
      *
@@ -134,8 +50,8 @@ class RequestHeaderBag extends HeaderBag
      */
     public function getCookies($format = self::COOKIES_ARRAY)
     {
-        if (!in_array($format, array(self::COOKIES_STRING, self::COOKIES_ARRAY))) {
-            throw new \InvalidArgumentException(sprintf('Format "%s" invalid (%s).', $format, implode(', ', array(self::COOKIES_STRING, self::COOKIES_ARRAY))));
+        if (!in_array($format, array(self::COOKIES_HEADER, self::COOKIES_ARRAY))) {
+            throw new \InvalidArgumentException(sprintf('Format "%s" invalid (%s).', $format, implode(', ', array(self::COOKIES_HEADER, self::COOKIES_ARRAY))));
         }
 
         if (self::COOKIES_ARRAY === $format) {
@@ -148,21 +64,7 @@ class RequestHeaderBag extends HeaderBag
         }, $this->cookies));
     }
 
-    /**
-     * Clears a cookie in the browser
-     *
-     * @param string $name
-     * @param string $path
-     * @param string $domain
-     *
-     * @api
-     */
-    public function clearCookie($name)
-    {
-        $this->setCookie(new Cookie($name));
-    }
-    
-    protected function updateCookieHeader()
+    protected function syncCookiesToHeaders()
     {
         if (empty($this->cookies)) {
             
@@ -172,5 +74,17 @@ class RequestHeaderBag extends HeaderBag
         
         $this->set('Cookie', $this->getCookies(self::COOKIES_HEADER), true);
      }
-}
 
+     protected function syncHeadersToCookies()
+     {
+         $this->cookies = array();
+         
+         $cookieHeader = $this->get('Cookie', '', true);
+         
+         foreach (explode(';', $cookieHeader) as $cookieData) {
+             
+             list($name, $value) = explode('=', $cookieData);
+             $this->setCookie(new Cookie(trim($name), trim($value)));
+         }
+     }
+}

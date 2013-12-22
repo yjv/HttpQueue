@@ -7,7 +7,7 @@ use Yjv\HttpQueue\Response\ResponseInterface;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Payload\StreamPayload;
+use Yjv\HttpQueue\Connection\Payload\StreamPayload;
 
 class TempDestinationStreamFactory implements DestinationPayloadFactoryInterface
 {

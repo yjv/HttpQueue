@@ -34,7 +34,7 @@ class Query extends \ArrayObject
                 }
             } else {
                 
-                $elements[$key] = $value ? ($urlEncoded ? rawurlencode($value) : $value) : '';
+                $elements[$key] = $value ? (string)($urlEncoded ? rawurlencode($value) : $value) : '';
             }
         }
         

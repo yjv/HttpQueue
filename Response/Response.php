@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Response;
 
+use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
+
 use Yjv\HttpQueue\Connection\PayloadInterface;
 
 class Response implements ResponseInterface
@@ -40,7 +42,7 @@ class Response implements ResponseInterface
         return $this->body;
     }
     
-    public function setBody(PayloadInterface $body)
+    public function setBody(DestinationPayloadInterface $body)
     {
         $this->body = $body;
         return $this;

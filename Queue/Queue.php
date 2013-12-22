@@ -43,27 +43,29 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Queue implements QueueInterface, HandleObserverInterface
 {
-    protected $pending;
-    protected $responses;
+    protected $pending = array();
+    protected $responses = array();
     protected $config;
     protected $sendCalls = 0;
     
     public function __construct(QueueConfigInterface $config)
     {
-        $this->pending = new \SplObjectStorage();
-        $this->responses = new \SplObjectStorage();
         $this->config = $config;
     }
     
     public function queue(RequestInterface $request)
     {
-        $this->pending->attach($request);
+        $this->pending[] = $request;
         return $this;
     }
     
     public function unqueue(RequestInterface $request)
     {
-        $this->pending->detach($request);
+        if(($index = array_search($request, $this->pending)) !== false)
+        {
+            unset($this->pending[$index]);
+        }
+        
         return $this;
     }
     
@@ -83,8 +85,8 @@ class Queue implements QueueInterface, HandleObserverInterface
         
         if (!$this->sendCalls) {
             
-            $responses = iterator_to_array($this->responses);
-            $this->responses->removeAll($this->responses);
+            $responses = $this->responses;
+            $this->responses = array();
             return $responses;
         }
     }
@@ -127,10 +129,11 @@ class Queue implements QueueInterface, HandleObserverInterface
             $handle = $this->config->getHandleFactory()->createHandle($pending);
             $handle->setObserver($this);
             $this->config->getHandleMap()->setRequest($handle, $pending);
-            $this->pending->detach($pending);
             $this->config->getResponseFactory()->registerHandle($handle, $pending);
             $this->config->getMultiHandle()->addHandle($handle);
         }
+        
+        $this->pending = array();
     }
     
     /**
@@ -163,9 +166,11 @@ class Queue implements QueueInterface, HandleObserverInterface
             
             if ($response) {
 
-                $event = new ResponseEvent($this, $request, $response);
-                $this->config->getEventDispatcher()->dispatch(RequestEvents::COMPLETE, $event);
-                $this->responses->attach($response);
+                $this->config->getEventDispatcher()->dispatch(
+                    RequestEvents::COMPLETE, 
+                    new ResponseEvent($this, $request, $response)
+                );
+                $this->responses[] = $response;
             }
             
             $this->config->getHandleMap()->clear($handle);

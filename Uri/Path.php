@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpQueue\Url;
+namespace Yjv\HttpQueue\Uri;
 
 class Path extends \ArrayObject
 {
@@ -18,15 +18,13 @@ class Path extends \ArrayObject
         $lastPiece = array_pop($pathArray);
         
         if ($lastPiece !== false) {
-            
-            $extensionPosition = stripos($lastPiece, '.');
-            
-            if ($extensionPosition !== false) {
-                
-                $extension = substr($lastPiece, $extensionPosition);
+        
+            if (($extensionPosition = stripos($lastPiece, '.')) !== false) {
+        
+                $extension = substr($lastPiece, $extensionPosition + 1);
                 $lastPiece = substr($lastPiece, 0, $extensionPosition);
             }
-            
+        
             $pathArray[] = $lastPiece;
         }
         
@@ -36,7 +34,7 @@ class Path extends \ArrayObject
         }, $pathArray), $extension);
     }
     
-    public function __construct(array $pathArray, $extension)
+    public function __construct(array $pathArray = array(), $extension = '')
     {
         parent::__construct($pathArray);
         $this->extension = $extension;
@@ -45,6 +43,12 @@ class Path extends \ArrayObject
     public function getExtension()
     {
         return $this->extension;
+    }
+    
+    public function setExtension($extension)
+    {
+        $this->extension = $extension;
+        return $this;
     }
     
     public function __toString()
@@ -56,11 +60,11 @@ class Path extends \ArrayObject
             $pathArray[] = rawurlencode($pathPiece);
         }
         
-        $path = '/'.implode('/', $pathArray);
+        $path = '/' . implode('/', $pathArray);
         
         if ($this->extension) {
             
-            $path . '.' . $this->extension;
+            $path .= '.' . $this->extension;
         }
         
         return $path;

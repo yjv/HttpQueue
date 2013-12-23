@@ -3,7 +3,7 @@ namespace Yjv\HttpQueue\Request;
 
 use Yjv\HttpQueue\Connection\PayloadInterface;
 
-use Yjv\HttpQueue\Url\Url;
+use Yjv\HttpQueue\Uri\Uri;
 
 class Request implements RequestInterface
 {
@@ -48,7 +48,7 @@ class Request implements RequestInterface
     {
         if (is_string($url)) {
             
-            $url = Url::createFromString($url);
+            $url = Uri::createFromString($url);
         }
         
         $this->url = $url;

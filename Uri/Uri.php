@@ -1,50 +1,49 @@
 <?php
-namespace Yjv\HttpQueue\Url;
+namespace Yjv\HttpQueue\Uri;
 
-class Url
+class Uri
 {
-    protected $scheme;
-    protected $host;
-    protected $port;
-    protected $username;
-    protected $password;
+    protected $scheme = '';
+    protected $host = '';
+    protected $port = '';
+    protected $username = '';
+    protected $password = '';
     protected $path;
     protected $query;
-    protected $fragment;
+    protected $fragment = '';
     
-    public static function createFromString($urlString)
+    public static function createFromString($uriString)
     {
-        $url = parse_url($urlString);
-        return new static(
-            isset($url['scheme']) ? $url['scheme'] : '',
-            isset($url['port']) ? $url['port'] : '',
-            isset($url['user']) ? $url['user'] : '',
-            isset($url['pass']) ? $url['pass'] : '',
-            isset($url['host']) ? $url['host'] : '',
-            Path::createFromString(isset($url['path']) ? $url['path'] : ''),
-            Query::createFromString(isset($url['query']) ? $url['query'] : ''),
-            isset($url['fragment']) ? $url['fragment'] : ''
-        );
-    }
-    
-    public function __construct(
-        $scheme, 
-        $port, 
-        $username, 
-        $password, 
-        $host, 
-        Path $path, 
-        Query $query, 
-        $fragment
-    ) {
-        $this->scheme = $scheme;
-        $this->host = $host;
-        $this->port = $port;
-        $this->username = $username;
-        $this->password = $password;
-        $this->path = $path;
-        $this->query = $query;
-        $this->fragment = $fragment;
+        $uriParts = parse_url($uriString);
+        
+        if ($uriParts === false) {
+            
+            throw new \InvalidArgumentException('there was an error parsing the url string.');
+        }
+        
+        $uriParts = array_merge(array(
+            'scheme' => '',
+            'port' => '',
+            'user' => '',
+            'pass' => '',
+            'host' => '',
+            'path' => '',
+            'query' => '',
+            'fragment' => '',
+        ), $uriParts);
+        
+        $uri = new static();
+        $uri
+            ->setScheme($uriParts['scheme'])
+            ->setPort($uriParts['port'])
+            ->setUsername($uriParts['user'])
+            ->setPassword($uriParts['pass'])
+            ->setHost($uriParts['host'])
+            ->setPath(Path::createFromString($uriParts['path']))
+            ->setQuery(Query::createFromString($uriParts['query']))
+            ->setFragment($uriParts['fragment'])
+        ;
+        return $uri;
     }
     
     public function getScheme()
@@ -76,7 +75,7 @@ class Url
     
     public function setPort($port)
     {
-        $this->port = $port;
+        $this->port = (int)$port;
         return $this;
     }
     
@@ -104,6 +103,11 @@ class Url
     
     public function getPath()
     {
+        if (!$this->path) {
+            
+            $this->path = new Path();
+        }
+        
         return $this->path;
     }
     
@@ -115,6 +119,11 @@ class Url
     
     public function getQuery()
     {
+        if (!$this->query) {
+            
+            $this->query = new Query();
+        }
+        
         return $this->query;
     }
     
@@ -146,8 +155,8 @@ class Url
             $url .= '@';
         }
         
-        $url .= $this->host ? rawurlencode($this->host) : '';
-        $url .= $this->port ? (int)$this->port : '';
+        $url .= rawurlencode($this->host);
+        $url .= $this->port ? ':' . $this->port : '';
         $url .= $this->path;
         $query = (string)$this->query;
         $url .= $query ? '?' . $query : '';

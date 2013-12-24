@@ -25,4 +25,10 @@ class ResponseEvent extends RequestEvent
     {
         return $this->response;
     }
+    
+    public function setResponse(ResponseInterface $response)
+    {
+        $this->response = $response;
+        return $this;
+    }
 }

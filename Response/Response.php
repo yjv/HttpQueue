@@ -3,15 +3,14 @@ namespace Yjv\HttpQueue\Response;
 
 use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
 
-use Yjv\HttpQueue\Connection\PayloadInterface;
-
 class Response implements ResponseInterface
 {
     protected $code;
+    protected $statusMessage;
     protected $headers;
     protected $body;
     
-    public function __construct($code, $headers = array(), PayloadInterface $body = null)
+    public function __construct($code, $headers = array(), DestinationPayloadInterface $body = null)
     {
         $this->code = $code;
         $this->setHeaders($headers);
@@ -21,6 +20,28 @@ class Response implements ResponseInterface
     public function __toString()
     {
         return $this->headers . "\r\n" . $this->body;
+    }
+    
+    public function getCode()
+    {
+        return $this->code;
+    }
+    
+    public function setCode($code)
+    {
+        $this->code = $code;
+        return $this;
+    }
+    
+    public function getStatusMessage()
+    {
+        return $this->statusMessage;
+    }
+    
+    public function setStatusMessage($statusMessage)
+    {
+        $this->statusMessage = $statusMessage;
+        return $this;
     }
     
     /**

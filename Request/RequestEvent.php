@@ -27,4 +27,10 @@ class RequestEvent extends Event
     {
         return $this->request;
     }
+    
+    public function setRequest(RequestInterface $request)
+    {
+        $this->request = $request;
+        return $this;
+    }
 }

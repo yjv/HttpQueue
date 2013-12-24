@@ -1,6 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
+use Yjv\HttpQueue\Request\CreateHandleEvent;
+
+use Yjv\HttpQueue\Request\RequestHandleEvent;
+
 use Yjv\HttpQueue\Response\ResponseEvent;
 
 use Yjv\HttpQueue\Connection\HandleObserverInterface;
@@ -126,7 +130,24 @@ class Queue implements QueueInterface, HandleObserverInterface
     {
         foreach ($this->pending as $pending) {
             
-            $handle = $this->config->getHandleFactory()->createHandle($pending);
+            $event = new CreateHandleEvent($this, $pending);
+            $this->config->getEventDispatcher()->dispatch(
+                RequestEvents::PRE_CREATE_HANDLE, 
+                $event
+            );
+            $pending = $event->getRequest();
+            
+            if (!($handle = $event->getHandle())) {
+                
+                $handle = $this->config->getHandleFactory()->createHandle($pending);
+            }
+            
+            $event = new CreateHandleEvent($this, $pending, $handle);
+            $this->config->getEventDispatcher()->dispatch(
+                RequestEvents::POST_CREATE_HANDLE, 
+                $event
+            );
+            $handle = $event->getHandle();
             $handle->setObserver($this);
             $this->config->getHandleMap()->setRequest($handle, $pending);
             $this->config->getResponseFactory()->registerHandle($handle, $pending);

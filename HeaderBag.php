@@ -3,7 +3,7 @@ namespace Yjv\HttpQueue;
 
 use Symfony\Component\HttpFoundation\HeaderBag as BaseHeaderBag;
 
-class HeaderBag extends BaseHeaderBag
+abstract class AbstractHeaderBag extends BaseHeaderBag
 {
     const COOKIES_HEADER           = 'header';
     const COOKIES_ARRAY            = 'array';
@@ -17,6 +17,8 @@ class HeaderBag extends BaseHeaderBag
      * @var array
     */
     protected $headerNames         = array();
+    
+    protected $syncing = false;
     
     /**
      * {@inheritdoc}
@@ -97,34 +99,27 @@ class HeaderBag extends BaseHeaderBag
         $this->syncHeadersToCookies();
     }
     
-    /**
-     * Returns an array with all cookies
-     *
-     * @param string $format
-     *
-     * @throws \InvalidArgumentException When the $format is invalid
-     *
-     * @return array
-     *
-     * @api
-     */
-    public function getCookies($format = self::COOKIES_ARRAY)
+    protected function syncCookiesToHeaders()
     {
-        if (!in_array($format, array(self::COOKIES_HEADER, self::COOKIES_ARRAY, self::COOKIES_FLAT_ARRAY))) {
-            throw new \InvalidArgumentException(sprintf('Format "%s" invalid (%s).', $format, implode(', ', array(self::COOKIES_HEADER, self::COOKIES_ARRAY, self::COOKIES_FLAT_ARRAY))));
+        if (!$this->syncing) {
+            
+            $this->syncing = true;
+            $this->doSyncCookiesToHeaders();
+            $this->syncing = false;
         }
-    
-        if (self::COOKIES_ARRAY === $format) {
-            return $this->cookies;
-        }
-    
-        return implode('; ', array_map(function(Cookie $cookie)
-        {
-            return sprintf('%s=%s', $cookie->getName(), $cookie->getValue());
-        }, $this->cookies));
     }
     
-    abstract protected function syncCookiesToHeaders();
-    abstract protected function syncHeadersToCookies();
+    protected function syncHeadersToCookies()
+    {
+        if (!$this->syncing) {
+            
+            $this->syncing = true;
+            $this->doSyncHeadersToCookies();
+            $this->syncing = false;
+        }
+    }
+    
+    abstract protected function doSyncCookiesToHeaders();
+    abstract protected function doSyncHeadersToCookies();
     abstract protected function getCookies($format = self::COOKIES_ARRAY);
 }

@@ -5,12 +5,6 @@ class Query extends \ArrayObject
 {
     protected $literalIntegerIndexes = false;
     
-    public static function createFromString($queryString)
-    {
-        parse_str($queryString, $queryParams);
-        return new static($queryParams);
-    }
-    
     public function __construct(array $queryArray = array())
     {
         parent::__construct($queryArray);

@@ -1,9 +1,9 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-use Yjv\HttpQueue\Connection\PayloadInterface;
+use Yjv\HttpQueue\Connection\Payload\PayloadInterface;
 
-use Yjv\HttpQueue\Uri\Uri;
+use Yjv\HttpQueue\Uri\Factory as UriFactory;
 
 class Request implements RequestInterface
 {
@@ -13,14 +13,33 @@ class Request implements RequestInterface
     protected $method;
     protected $headers;
     protected $body;
-    protected $trackProgress = false;
     
-    public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array(), PayloadInterface $body = null)
+    public function __construct($url, $method = RequestInterface::METHOD_GET, $headers = array())
     {
         $this->setUrl($url);
         $this->setMethod($method);
         $this->setHeaders($headers);
-        $this->body = $body;
+    }
+    
+    public function __toString()
+    {
+        return $this->headers . "\r\n" . $this->body;
+    }
+    
+    public function setOption($name, $value)
+    {
+        $this->options[$name] = $value;
+        return $this;
+    }
+    
+    public function getOption($name, $default = null)
+    {
+        return isset($this->options[$name]) ? $this->options[$name] : $default;
+    }
+    
+    public function getOptions()
+    {
+        return $this->options;
     }
 
     public function setHandleOption($name, $value)
@@ -31,12 +50,7 @@ class Request implements RequestInterface
     
     public function getHandleOption($name, $default = null)
     {
-        if (isset($this->handleOptions[$name]) || array_key_exists($name, $this->handleOptions)) {
-            
-            return $this->handleOptions[$name];
-        }
-        
-        return $default;
+        return isset($this->handleOptions[$name]) ? $this->handleOptions[$name] : $default;
     }
     
     public function getHandleOptions()
@@ -48,7 +62,7 @@ class Request implements RequestInterface
     {
         if (is_string($url)) {
             
-            $url = Uri::createFromString($url);
+            $url = UriFactory::createUriFromString($url);
         }
         
         $this->url = $url;
@@ -81,18 +95,7 @@ class Request implements RequestInterface
     {
         return $this->headers;
     }
-    
-    public function getTrackProgress()
-    {
-        return $this->trackProgress;
-    }
-    
-    public function setTrackProgress($trackProgress)
-    {
-        $this->trackProgress = $trackProgress;
-        return $this;
-    }
-    
+
     public function getBody()
     {
         return $this->body;

@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
-use Yjv\HttpQueue\Request\CreateHandleEvent;
+use Yjv\HttpQueue\Queue\CreateHandleEvent;
 
 use Yjv\HttpQueue\Request\RequestHandleEvent;
 

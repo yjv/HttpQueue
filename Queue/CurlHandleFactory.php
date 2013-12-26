@@ -15,6 +15,8 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 class CurlHandleFactory implements HandleFactoryInterface
 {
+    const TRACK_PROGRESS_OPTION = 'track_progress';
+    
     public function createHandle(RequestInterface $request)
     {
         $headers = clone $request->getHeaders();
@@ -42,7 +44,7 @@ class CurlHandleFactory implements HandleFactoryInterface
             $curlOptions[CURLOPT_PORT] = $url->getPort();
         }
         
-        if ($request->getTrackProgress()) {
+        if ($request->getOption(self::TRACK_PROGRESS_OPTION, false)) {
 
             $curlOptions[CURLOPT_NOPROGRESS] = false;
             $curlOptions[CURLOPT_PROGRESSFUNCTION] = function(){};
@@ -96,7 +98,7 @@ class CurlHandleFactory implements HandleFactoryInterface
             $headers->set('Expect', '');
         } 
                
-        $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCaseFlattened();
+        $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCaseFlattened(false);
         $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_HEADER);
         $handle->setOptions($curlOptions);
         $handle->setOptions($request->getHandleOptions());   

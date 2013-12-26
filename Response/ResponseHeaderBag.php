@@ -11,13 +11,36 @@
 
 namespace Yjv\HttpQueue\Response;
 
-use Yjv\HttpQueue\HeaderBag;
+use Yjv\HttpQueue\AbstractHeaderBag;
 
 use Symfony\Component\HttpFoundation\Cookie;
 
-class ResponseHeaderBag extends HeaderBag
+use Yjv\HttpQueue\Cookie\Factory as CookieFactory;
+
+class ResponseHeaderBag extends AbstractHeaderBag
 {
     const COOKIES_FLAT_ARRAY       = 'flat_array';
+
+    /**
+     * @var array
+     */
+    protected $computedCacheControl = array();
+    
+    /**
+     * Constructor.
+     *
+     * @param array $headers An array of HTTP headers
+     *
+     * @api
+     */
+    public function __construct(array $headers = array())
+    {
+        parent::__construct($headers);
+
+        if (!isset($this->headers['cache-control'])) {
+            $this->set('Cache-Control', '');
+        }
+    }
     
     /**
      * {@inheritdoc}
@@ -27,7 +50,8 @@ class ResponseHeaderBag extends HeaderBag
     public function set($key, $values, $replace = true)
     {
         parent::set($key, $values, $replace);
-
+        $uniqueKey = strtr(strtolower($key), '_', '-');
+        
         // ensure the cache-control header has sensible defaults
         if (in_array($uniqueKey, array('cache-control', 'etag', 'last-modified', 'expires'))) {
             $computed = $this->computeCacheControlValue();
@@ -45,7 +69,8 @@ class ResponseHeaderBag extends HeaderBag
     public function remove($key)
     {
         parent::remove($key);
-
+        $uniqueKey = strtr(strtolower($key), '_', '-');
+        
         if ('cache-control' === $uniqueKey) {
             $this->computedCacheControl = array();
         }
@@ -93,21 +118,7 @@ class ResponseHeaderBag extends HeaderBag
         $this->cookies[$cookie->getDomain()][$cookie->getPath()][$cookie->getName()] = $cookie;
         $this->syncCookiesToHeaders();
     }
-
-    /**
-     * Clears a cookie in the browser
-     *
-     * @param string $name
-     * @param string $path
-     * @param string $domain
-     *
-     * @api
-     */
-    public function clearCookie($name)
-    {
-        $this->setCookie(new Cookie($name));
-    }
-    
+        
     /**
      * Removes a cookie from the array, but does not unset it in the browser
      *
@@ -171,13 +182,13 @@ class ResponseHeaderBag extends HeaderBag
             return $flattenedCookies;
         }
 
-        return array_map(function(Cookie $cookie)
+        return implode('; ', array_map(function(Cookie $cookie)
         {
             return (string)$cookie;
-        }, $this->cookies);
+        }, $this->getCookies(self::COOKIES_FLAT_ARRAY)));
     }
 
-    protected function syncCookiesToHeaders()
+    protected function doSyncCookiesToHeaders()
     {
         if (empty($this->cookies)) {
 
@@ -188,37 +199,13 @@ class ResponseHeaderBag extends HeaderBag
         $this->set('Set-Cookie', $this->getCookies(self::COOKIES_HEADER), true);
     }
 
-    protected function syncHeadersToCookies()
+    protected function doSyncHeadersToCookies()
     {
         $this->cookies = array();
         
-        foreach ($this->get('Set-Cookie', null, true) as $header) {
+        foreach ($this->get('Set-Cookie', null, false) as $header) {
 
-            $metadata = array(
-                'expires' => 0,
-                'path' => '/',
-                'domain' => null,
-                'secure' => false,
-                'httponly' => false
-            );
-            
-            preg_match_all('#([a-zA-Z][a-zA-Z_-]*)\s*(?:=(?:"([^"]*)"|([^;]*)))?#', $header, $matches, PREG_SET_ORDER);
-            
-            list($useless, $name, $useless, $value) = array_shift($matches);
-            
-            foreach ($matches as $match) {
-                $metadata[strtolower($match[1])] = isset($match[3]) ? $match[3] : (isset($match[2]) ? $match[2] : true);
-            }
-            
-            $this->setCookie(new Cookie(
-                $name, 
-                $value,
-                $metadata['expires'],
-                $metadata['path'],
-                $metadata['domain'],
-                $metadata['secure'],
-                $metadata['httponly']
-            ));
+            $this->setCookie(CookieFactory::createFromSetCookieHeader($header));
         }
     }
 

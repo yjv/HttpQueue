@@ -39,12 +39,13 @@ class QueryTest extends \PHPUnit_Framework_TestCase
     public function testStringConversion()
     {
         $queryString = 'a=b&b[]=2&b[]=3&asd[xcvcvx]=cbvbcv';
-        $this->assertEquals(new Query(array(
+        $queryStringWithLiteralIndexes = 'a=b&b[0]=2&b[1]=3&asd[xcvcvx]=cbvbcv';
+        $query = new Query(array(
             'a' => 'b', 
             'b' => array('2', '3'), 
             'asd' => array('xcvcvx' => 'cbvbcv')
-        )), Query::createFromString($queryString));
-        $this->assertEquals($queryString, (string)Query::createFromString($queryString));
-        $this->assertEquals('a=b&b[0]=2&b[1]=3&asd[xcvcvx]=cbvbcv', (string)Query::createFromString($queryString)->setLiteralIntegerIndexes(true));
+        ));
+        $this->assertEquals($queryString, (string)$query);
+        $this->assertEquals($queryStringWithLiteralIndexes, (string)$query->setLiteralIntegerIndexes(true));
     }
 }

@@ -1,9 +1,11 @@
 <?php
-namespace Yjv\HttpQueue\Request;
+namespace Yjv\HttpQueue\Queue;
+
+use Yjv\HttpQueue\Request\RequestInterface;
+
+use Yjv\HttpQueue\Request\RequestEvent;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
-
-use Yjv\HttpQueue\Queue\QueueInterface;
 
 class CreateHandleEvent extends RequestEvent
 {
@@ -11,6 +13,7 @@ class CreateHandleEvent extends RequestEvent
     
     public function __construct(QueueInterface $queue, RequestInterface $request, ConnectionHandleInterface $handle = null)
     {
+        parent::__construct($queue, $request);
         $this->handle = $handle;
     }
     

@@ -12,40 +12,6 @@ class Uri
     protected $query;
     protected $fragment = '';
     
-    public static function createFromString($uriString)
-    {
-        $uriParts = parse_url($uriString);
-        
-        if ($uriParts === false) {
-            
-            throw new \InvalidArgumentException('there was an error parsing the url string.');
-        }
-        
-        $uriParts = array_merge(array(
-            'scheme' => '',
-            'port' => '',
-            'user' => '',
-            'pass' => '',
-            'host' => '',
-            'path' => '',
-            'query' => '',
-            'fragment' => '',
-        ), $uriParts);
-        
-        $uri = new static();
-        $uri
-            ->setScheme($uriParts['scheme'])
-            ->setPort($uriParts['port'])
-            ->setUsername($uriParts['user'])
-            ->setPassword($uriParts['pass'])
-            ->setHost($uriParts['host'])
-            ->setPath(Path::createFromString($uriParts['path']))
-            ->setQuery(Query::createFromString($uriParts['query']))
-            ->setFragment($uriParts['fragment'])
-        ;
-        return $uri;
-    }
-    
     public function getScheme()
     {
         return $this->scheme;

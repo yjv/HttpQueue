@@ -1,11 +1,13 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-use Yjv\HttpQueue\HeaderBag;
+use Yjv\HttpQueue\AbstractHeaderBag;
 
 use Symfony\Component\HttpFoundation\Cookie;
 
-class RequestHeaderBag extends HeaderBag
+use Yjv\HttpQueue\Cookie\Factory as CookieFactory;
+
+class RequestHeaderBag extends AbstractHeaderBag
 {
     /**
      * Sets a cookie.
@@ -64,7 +66,7 @@ class RequestHeaderBag extends HeaderBag
         }, $this->cookies));
     }
 
-    protected function syncCookiesToHeaders()
+    protected function doSyncCookiesToHeaders()
     {
         if (empty($this->cookies)) {
             
@@ -75,16 +77,18 @@ class RequestHeaderBag extends HeaderBag
         $this->set('Cookie', $this->getCookies(self::COOKIES_HEADER), true);
      }
 
-     protected function syncHeadersToCookies()
+     protected function doSyncHeadersToCookies()
      {
          $this->cookies = array();
          
-         $cookieHeader = $this->get('Cookie', '', true);
-         
-         foreach (explode(';', $cookieHeader) as $cookieData) {
+         if (!$this->has('Cookie')) {
              
-             list($name, $value) = explode('=', $cookieData);
-             $this->setCookie(new Cookie(trim($name), trim($value)));
+             return;
+         }
+         
+         foreach (CookieFactory::createMultipleFromCookieHeader($this->get('Cookie', null, true)) as $cookie) {
+             
+             $this->setCookie($cookie);
          }
      }
 }

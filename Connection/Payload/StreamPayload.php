@@ -27,7 +27,7 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
      */
     public function readStream($lengthOfDataToRead)
     {
-        return $this->read($lengthOfDataRead);
+        return $this->read($lengthOfDataToRead);
     }
     
     public function getPayloadData()
@@ -42,7 +42,7 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
             return $this->write($data);
         }
         
-        return true;
+        return false;
     }
     
     public function getContentType()

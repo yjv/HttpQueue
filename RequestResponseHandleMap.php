@@ -76,7 +76,7 @@ class RequestResponseHandleMap
     
         foreach ($this->responses as $handle) {
     
-            $requests[] = $this->responses[$handle];
+            $responses[] = $this->responses[$handle];
         }
     
         return $responses;

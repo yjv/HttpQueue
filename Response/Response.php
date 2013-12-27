@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Response;
 
+use Yjv\HttpQueue\Header\HeaderBag;
+
 use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
 
 class Response implements ResponseInterface
@@ -131,7 +133,7 @@ class Response implements ResponseInterface
     
     public function setHeaders($headers)
     {
-        $this->headers = $headers instanceof ResponseHeaderBag ? $headers : new ResponseHeaderBag($headers);
+        $this->headers = $headers instanceof HeaderBag ? $headers : new HeaderBag($headers);
         return $this;
     }
     

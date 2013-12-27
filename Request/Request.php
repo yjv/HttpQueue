@@ -1,8 +1,9 @@
 <?php
 namespace Yjv\HttpQueue\Request;
 
-use Yjv\HttpQueue\Connection\Payload\PayloadInterface;
+use Yjv\HttpQueue\Header\HeaderBag;
 
+use Yjv\HttpQueue\Connection\Payload\PayloadInterface;
 use Yjv\HttpQueue\Uri\Factory as UriFactory;
 
 class Request implements RequestInterface
@@ -87,7 +88,7 @@ class Request implements RequestInterface
     
     public function setHeaders($headers)
     {
-        $this->headers = $headers instanceof RequestHeaderBag ? $headers : new RequestHeaderBag($headers);
+        $this->headers = $headers instanceof HeaderBag ? $headers : new HeaderBag($headers);
         return $this;
     }
     

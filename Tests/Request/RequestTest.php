@@ -1,6 +1,8 @@
 <?php
 namespace Yjv\HttpQueue\Tests\Request;
 
+use Yjv\HttpQueue\Header\HeaderBag;
+
 use Yjv\HttpQueue\Request\RequestInterface;
 
 use Yjv\HttpQueue\Request\RequestHeaderBag;
@@ -23,7 +25,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     public function testGettersSetters()
     {
         $this->assertInstanceOf('Yjv\HttpQueue\Uri\Uri', $this->request->getUrl());
-        $this->assertInstanceOf('Yjv\HttpQueue\Request\RequestHeaderBag', $this->request->getHeaders());
+        $this->assertInstanceOf('Yjv\HttpQueue\Header\HeaderBag', $this->request->getHeaders());
         $this->assertEquals(RequestInterface::METHOD_GET, $this->request->getMethod());
         $this->assertSame($this->request, $this->request->setMethod(RequestInterface::METHOD_POST));
         $this->assertEquals(RequestInterface::METHOD_POST, $this->request->getMethod());
@@ -36,9 +38,12 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         );
         $this->assertSame($this->request, $this->request->setHeaders(array('key' => 'value', 'key2' => 'value2')));
         $this->assertEquals(
-            new RequestHeaderBag(array('key' => 'value', 'key2' => 'value2')), 
+            new HeaderBag(array('key' => 'value', 'key2' => 'value2')), 
             $this->request->getHeaders()
         );
+        $headers = new HeaderBag();
+        $this->assertSame($this->request, $this->request->setHeaders($headers));
+        $this->assertSame($headers, $this->request->getHeaders());
         $this->assertEquals(array(), $this->request->getOptions());
         $this->assertEquals('default', $this->request->getOption('name', 'default'));
         $this->assertSame($this->request, $this->request->setOption('name', 'value'));
@@ -56,7 +61,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     
     public function testCastToString()
     {
-        $headers = Mockery::mock('Yjv\HttpQueue\Request\RequestHeaderBag')
+        $headers = Mockery::mock('Yjv\HttpQueue\Header\HeaderBag')
             ->shouldReceive('__toString')
             ->once()
             ->andReturn('headers')
@@ -73,7 +78,5 @@ class RequestTest extends \PHPUnit_Framework_TestCase
             ->setBody($body)
         ;
         $this->assertEquals("headers\r\nbody", (string)$this->request);
-        
-        
     }
 }

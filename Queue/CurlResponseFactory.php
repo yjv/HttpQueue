@@ -69,7 +69,9 @@ class CurlResponseFactory implements ResponseFactoryInterface
             $code = $startLine[1];
             $status = isset($startLine[2]) ? $startLine[2] : '';
     
-            $this->handleMap->setResponse($handle, new Response($code));
+            $response = new Response($code);
+            $response->setStatusMessage($status);
+            $this->handleMap->setResponse($handle, $response);
             return $length;
         } 
         

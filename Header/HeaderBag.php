@@ -1,32 +1,21 @@
 <?php
-namespace Yjv\HttpQueue;
+namespace Yjv\HttpQueue\Header;
 
 use Symfony\Component\HttpFoundation\HeaderBag as BaseHeaderBag;
 
-abstract class AbstractHeaderBag extends BaseHeaderBag
+class HeaderBag extends BaseHeaderBag
 {
-    const COOKIES_HEADER           = 'header';
-    const COOKIES_ARRAY            = 'array';
-    
     /**
      * @var array
      */
-    protected $cookies             = array();
-    
-    /**
-     * @var array
-    */
     protected $headerNames         = array();
-    
-    protected $syncing = false;
     
     /**
      * {@inheritdoc}
-    */
+     */
     public function __toString()
     {
-        ksort($this->headerNames);
-        return parent::__toString();
+        return implode("\r\n", $this->allPreserveCaseFlattened());
     }
     
     /**
@@ -39,16 +28,15 @@ abstract class AbstractHeaderBag extends BaseHeaderBag
         return array_combine($this->headerNames, $this->headers);
     }
     
-    public function allPreserveCaseFlattened($includeCookieHeaders = true)
+    public function allPreserveCaseFlattened(array $headerExclusions = array())
     {
         $headers = array();
-    
+        $headerExclusions = array_map('strtolower', $headerExclusions);
+        
         foreach ($this->allPreserveCase() as $name => $values) {
     
-            if (
-                !$includeCookieHeaders 
-                && in_array(strtolower($name), array('set-cookie', 'cookie'))
-            ) {
+            if (in_array(strtolower($name), $headerExclusions)) {
+                
                 continue;
             }
             
@@ -82,7 +70,6 @@ abstract class AbstractHeaderBag extends BaseHeaderBag
         parent::set($key, $values, $replace);
         $uniqueKey = strtr(strtolower($key), '_', '-');
         $this->headerNames[$uniqueKey] = $key;
-        $this->syncHeadersToCookies();
     }
     
     /**
@@ -93,33 +80,7 @@ abstract class AbstractHeaderBag extends BaseHeaderBag
     public function remove($key)
     {
         parent::remove($key);
-    
         $uniqueKey = strtr(strtolower($key), '_', '-');
         unset($this->headerNames[$uniqueKey]);
-        $this->syncHeadersToCookies();
     }
-    
-    protected function syncCookiesToHeaders()
-    {
-        if (!$this->syncing) {
-            
-            $this->syncing = true;
-            $this->doSyncCookiesToHeaders();
-            $this->syncing = false;
-        }
-    }
-    
-    protected function syncHeadersToCookies()
-    {
-        if (!$this->syncing) {
-            
-            $this->syncing = true;
-            $this->doSyncHeadersToCookies();
-            $this->syncing = false;
-        }
-    }
-    
-    abstract protected function doSyncCookiesToHeaders();
-    abstract protected function doSyncHeadersToCookies();
-    abstract protected function getCookies($format = self::COOKIES_ARRAY);
 }

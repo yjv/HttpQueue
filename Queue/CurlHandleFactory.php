@@ -99,7 +99,11 @@ class CurlHandleFactory implements HandleFactoryInterface
         } 
                
         $curlOptions[CURLOPT_HTTPHEADER] = $headers->allPreserveCaseFlattened(array('cookie'));
-        $curlOptions[CURLOPT_COOKIE] = $headers->getCookies(RequestHeaderBag::COOKIES_HEADER);
+        
+        if ($headers->has('Cookie')) {
+            
+            $curlOptions[CURLOPT_COOKIE] = $headers->get('Cookie');
+        }
         $handle->setOptions($curlOptions);
         $handle->setOptions($request->getHandleOptions());   
         

@@ -38,7 +38,7 @@ class StreamPayloadTest extends StreamTest
         $this->assertEquals($data, (string)$payload);
     }
     
-    public function testGetContentType()
+    public function testContentGetters()
     {
         $payload = new StreamPayload(fopen('php://temp', 'c+'));
         $this->assertNull($payload->getContentType());

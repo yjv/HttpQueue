@@ -33,7 +33,7 @@ class QueryTest extends \PHPUnit_Framework_TestCase
             'b[0]=2', 
             'b[1]=3', 
             'asd[xcvcvx]=cbvbcv'
-        ), $query->getParameterizedArray());
+        ), $query->getParameterizedArray(true));
     }
     
     public function testStringConversion()
@@ -46,6 +46,6 @@ class QueryTest extends \PHPUnit_Framework_TestCase
             'asd' => array('xcvcvx' => 'cbvbcv')
         ));
         $this->assertEquals($queryString, (string)$query);
-        $this->assertEquals($queryStringWithLiteralIndexes, (string)$query->setLiteralIntegerIndexes(true));
+        $this->assertEquals($queryStringWithLiteralIndexes, (string)$query->getString(true));
     }
 }

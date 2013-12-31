@@ -1,21 +1,21 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
-use Yjv\HttpQueue\Queue\CreateHandleEvent;
+use Yjv\HttpQueue\Event\ResponseEvent;
 
-use Yjv\HttpQueue\Request\RequestHandleEvent;
+use Yjv\HttpQueue\Event\HandleObserverEvent;
 
-use Yjv\HttpQueue\Response\ResponseEvent;
+use Yjv\HttpQueue\Event\HandleEvent;
+
+use Yjv\HttpQueue\Event\CreateHandleEvent;
+
+use Yjv\HttpQueue\Event\RequestHandleEvent;
 
 use Yjv\HttpQueue\Connection\HandleObserverInterface;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
-
-use Yjv\HttpQueue\Response\RecieveStatusLineEvent;
-
-use Yjv\HttpQueue\Response\ResponseEvents;
 
 use Yjv\HttpQueue\Request\RequestMediatorInterface;
 
@@ -35,9 +35,9 @@ use Yjv\HttpQueue\ResponseInterface;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Request\RequestEvent;
+use Yjv\HttpQueue\Event\RequestEvent;
 
-use Yjv\HttpQueue\Request\RequestEvents;
+use Yjv\HttpQueue\Event\RequestEvents;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -115,12 +115,11 @@ class Queue implements QueueInterface, HandleObserverInterface
     public function handleEvent($name, ConnectionHandleInterface $handle, array $args)
     {
         $this->config->getEventDispatcher()->dispatch(
-            RequestEvents::HANDLE_EVENT, 
-            new HandleEvent(
+            RequestEvents::HANDLE_EVENT.'.'.$name, 
+            new HandleObserverEvent(
                 $this, 
                 $this->config->getHandleMap()->getRequest($handle), 
                 $handle, 
-                $name, 
                 $args
             )
         );
@@ -130,7 +129,7 @@ class Queue implements QueueInterface, HandleObserverInterface
     {
         foreach ($this->pending as $pending) {
             
-            $event = new CreateHandleEvent($this, $pending);
+            $event = new HandleEvent($this, $pending);
             $this->config->getEventDispatcher()->dispatch(
                 RequestEvents::PRE_CREATE_HANDLE, 
                 $event
@@ -142,7 +141,7 @@ class Queue implements QueueInterface, HandleObserverInterface
                 $handle = $this->config->getHandleFactory()->createHandle($pending);
             }
             
-            $event = new CreateHandleEvent($this, $pending, $handle);
+            $event = new HandleEvent($this, $pending, $handle);
             $this->config->getEventDispatcher()->dispatch(
                 RequestEvents::POST_CREATE_HANDLE, 
                 $event

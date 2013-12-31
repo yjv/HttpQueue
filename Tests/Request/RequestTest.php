@@ -2,15 +2,10 @@
 namespace Yjv\HttpQueue\Tests\Request;
 
 use Yjv\HttpQueue\Header\HeaderBag;
-
 use Yjv\HttpQueue\Request\RequestInterface;
-
 use Yjv\HttpQueue\Request\RequestHeaderBag;
-
 use Yjv\HttpQueue\Uri\Factory as UrlFactory;
-
 use Yjv\HttpQueue\Request\Request;
-
 use Mockery;
 
 class RequestTest extends \PHPUnit_Framework_TestCase

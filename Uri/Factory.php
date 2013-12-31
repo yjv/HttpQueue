@@ -25,13 +25,13 @@ class Factory
     
         $uri = new Uri();
         $uri
-            ->setScheme($uriParts['scheme'])
+            ->setScheme($uriParts['scheme'] ?: 'http')
             ->setPort($uriParts['port'])
             ->setUsername($uriParts['user'])
             ->setPassword($uriParts['pass'])
             ->setHost($uriParts['host'])
-            ->setPath(self::createPathFromString($uriParts['path']))
-            ->setQuery(self::createQueryFromString($uriParts['query']))
+            ->setPath(static::createPathFromString($uriParts['path']))
+            ->setQuery(static::createQueryFromString($uriParts['query']))
             ->setFragment($uriParts['fragment'])
         ;
         return $uri;

@@ -1,10 +1,10 @@
 <?php
 namespace Yjv\HttpQueue\Curl\Payload;
 
+use Yjv\HttpQueue\Curl\CurlFileInterface;
 use Yjv\HttpQueue\Curl\CurlHandle;
-use Yjv\HttpQueue\Curl\CurlFile;
 use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
-use Yjv\HttpQueue\Url\Query;
+use Yjv\HttpQueue\Uri\Query;
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 class FormFieldsPayload extends Query implements SourcePayloadInterface
@@ -23,7 +23,7 @@ class FormFieldsPayload extends Query implements SourcePayloadInterface
 
     public function getPayloadData()
     {
-        return array_map(array($this, 'replaceCurlFiles'), $this->getSingleLevelArray());
+        return array_map('reset', $this->getSingleLevelArray());
     }
     
     public function getContentType()
@@ -34,13 +34,13 @@ class FormFieldsPayload extends Query implements SourcePayloadInterface
     {
     }
 
-    protected function replaceCurlFiles($element)
+    protected function processValueForOutput($value)
     {
-        if ($element instanceof CurlFile) {
+        if ($value instanceof CurlFileInterface) {
 
-            return $element->getCurlValue();
+            return $value->getCurlValue();
         }
-
-        return $element;
+        
+        return parent::processValueForOutput($value);
     }
 }

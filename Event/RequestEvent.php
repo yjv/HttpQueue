@@ -1,10 +1,8 @@
 <?php
-namespace Yjv\HttpQueue\Request;
+namespace Yjv\HttpQueue\Event;
 
-use Yjv\HttpQueue\Response\ResponseInterface;
-
+use Yjv\HttpQueue\Request\RequestInterface;
 use Yjv\HttpQueue\Queue\QueueInterface;
-
 use Symfony\Component\EventDispatcher\Event;
 
 class RequestEvent extends Event

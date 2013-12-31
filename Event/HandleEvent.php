@@ -1,31 +1,19 @@
 <?php
-namespace Yjv\HttpQueue\Queue;
+namespace Yjv\HttpQueue\Event;
 
-use Yjv\HttpQueue\Request\RequestEvent;
-
+use Yjv\HttpQueue\Queue\QueueInterface;
 use Yjv\HttpQueue\Request\RequestInterface;
-
+use Yjv\HttpQueue\Event\RequestEvent;
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
-
-use Symfony\Component\EventDispatcher\Event;
 
 class HandleEvent extends RequestEvent
 {
     protected $handle;
-    protected $args;
-    protected $handleEventName;
     
-    public function __construct(
-        QueueInterface $queue, 
-        RequestInterface $request, 
-        ConnectionHandleInterface $handle, 
-        $handleEventName, 
-        $args
-    ) {
+    public function __construct(QueueInterface $queue, RequestInterface $request, ConnectionHandleInterface $handle = null)
+    {
         parent::__construct($queue, $request);
         $this->handle = $handle;
-        $this->handleEventName = $handleEventName;
-        $this->args = $args;
     }
     
     public function getHandle()
@@ -33,13 +21,9 @@ class HandleEvent extends RequestEvent
         return $this->handle;
     }
     
-    public function getHandleEventName()
+    public function setHandle(ConnectionHandleInterface $handle)
     {
-        return $this->handleEventName;
-    }
-    
-    public function getArgs()
-    {
-        return $this->args;
+        $this->handle = $handle;
+        return $this;
     }
 }

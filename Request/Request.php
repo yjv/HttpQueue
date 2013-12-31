@@ -2,7 +2,6 @@
 namespace Yjv\HttpQueue\Request;
 
 use Yjv\HttpQueue\Header\HeaderBag;
-
 use Yjv\HttpQueue\Connection\Payload\PayloadInterface;
 use Yjv\HttpQueue\Uri\Factory as UriFactory;
 

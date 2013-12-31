@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\File\File;
 class CurlFile extends File implements CurlFileInterface
 {
     protected $mimeType;
-    protected $name;
+    protected $uploadName;
     
     public function getMimeType()
     {
@@ -24,20 +24,20 @@ class CurlFile extends File implements CurlFileInterface
         return $this;
     }
     
-    public function getName()
+    public function getUploadName()
     {
-        if (!$this->name) {
+        if (!$this->uploadName) {
             
             $extension = $this->getExtension();
-            $this->name = $this->getBasename($extension ? '.'.$extension : '');
+            $this->uploadName = $this->getBasename($extension ? '.'.$extension : '');
         }
         
-        return $this->name;
+        return $this->uploadName;
     }
     
-    public function setName($name)
+    public function setUploadName($uploadName)
     {
-        $this->name = $name;
+        $this->uploadName = $uploadName;
         return $this;
     }
     
@@ -50,7 +50,7 @@ class CurlFile extends File implements CurlFileInterface
             return new \CURLFile(
                 $this->getRealPath(), 
                 $this->getMimeType(), 
-                $this->getName()
+                $this->getUploadName()
             );
         }
 
@@ -58,7 +58,7 @@ class CurlFile extends File implements CurlFileInterface
         return sprintf(
             '@%s;filename=%s;type=%s', 
             $this->getRealPath(), 
-            $this->getName(), 
+            $this->getUploadName(), 
             $this->getMimeType()
         );
     }

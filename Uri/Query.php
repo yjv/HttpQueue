@@ -26,41 +26,71 @@ class Query extends \ArrayObject
         return $this->literalIntegerIndexes;
     }
     
-    public function getParameterizedArray($urlEncoded = true, $prefix = null, $startingData = null)
+    public function getSingleLevelArray($literalIntegerIndexes = false, $prefix = null, $startingData = null)
     {
         $elements = array();
         
         foreach ($startingData ?: $this as $key => $value) {
             
-            if ($prefix && !$this->literalIntegerIndexes && is_int($key)) {
+            if ($prefix && !$literalIntegerIndexes && is_int($key)) {
                 
                 $key = '';
             }
             
-            $key = $urlEncoded ? rawurlencode($key) : $key;
+            $key = rawurlencode($key);
             
             if ($prefix) {
 
-                $key = $prefix . '[' . $key . ']';
+                $key = sprintf('%s[%s]', $prefix, $key);
             }
             
             if (is_array($value)) {
                 
-                foreach ($this->getParameterizedArray($urlEncoded, $key, $value) as $subValue) {
+                foreach ($this->getSingleLevelArray($literalIntegerIndexes, $key, $value) as $subKey => $subValue) {
 
-                    $elements[] = $subValue;
+                    if (!isset($elements[$subKey])) {
+                        
+                        $elements[$subKey] = array();
+                    }
+                    
+                    $elements[$subKey] = array_merge($elements[$subKey], $subValue);
                 }
             } else {
+
+                if (!isset($elements[$key])) {
+                    
+                    $elements[$key] = array();
+                }
                 
-                $elements[] = sprintf('%s=%s', $key, $urlEncoded ? rawurlencode((string)$value) : (string)$value);
+                $elements[$key] = array_merge($elements[$key], array($this->processValueForOutput($value)));
             }
         }
         
         return $elements;
     }
     
-    public function getString($prefix = null)
+    public function getParameterizedArray($literalIntegerIndexes = false, $prefix = null)
     {
-        return implode('&', $this->getParameterizedArray(true, $prefix));
+        $elements = array();
+        
+        foreach ($this->getSingleLevelArray($literalIntegerIndexes, $prefix) as $key => $value) {
+            
+            foreach ($value as $subValue) {
+
+                $elements[] = sprintf('%s=%s', $key, $subValue);
+            }
+        }
+        
+        return $elements;
+    }
+    
+    public function getString($literalIntegerIndexes = false, $prefix = null)
+    {
+        return implode('&', $this->getParameterizedArray($literalIntegerIndexes, $prefix));
+    }
+    
+    protected function processValueForOutput($value)
+    {
+        return rawurlencode((string)$value);
     }
 }

@@ -16,7 +16,7 @@ class InternalFunctionMocker
         static::$mockedFunctions[$functionName] = $callable;
     }
     
-    public static function runMockedFunction($name, array $args)
+    public static function runMockedFunction($name, array &$args)
     {
         if (!isset(static::$mockedFunctions[$name])) {
             
@@ -40,17 +40,33 @@ class InternalFunctionMocker
             return;
         }
         
+        $args = array();
+        
+        $reflectionFunction = new \ReflectionFunction($functionName);
+        
+        foreach ($reflectionFunction->getParameters() as $key => $parameter) {
+            
+            $args[] = sprintf(
+                '%s$%s',
+                $parameter->isPassedByReference() ? '&' : '',
+                $parameter->getName()
+            );
+        }
+        
         $functionDefinition = sprintf(<<<DEFINITION
             namespace %s;
         
-            function %s()
+            function %s(%s)
             {
-                 return \%s::runMockedFunction('%s', func_get_args());
+                \$args = array_slice(array(%s), 0, func_num_args());
+                return \%s::runMockedFunction('%s', \$args);
             }
 DEFINITION
             ,
             $reflectionClass->getNamespaceName(),
             $functionName,
+            implode(', ', array_map(function($value){return $value.' = null';}, $args)),
+            implode(', ', $args),
             get_called_class(),
             $functionName
         );

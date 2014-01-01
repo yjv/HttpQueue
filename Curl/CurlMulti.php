@@ -14,7 +14,7 @@ class CurlMulti implements MultiHandleInterface
     
     protected $resource;
     protected $handles = array();
-    protected $ignoreTimeout = true;
+    protected $firstSelectCall = true;
     
     public function __construct()
     {
@@ -38,7 +38,7 @@ class CurlMulti implements MultiHandleInterface
     {
         curl_multi_add_handle($this->resource, $handle->getResource());
         $this->handles[(int)$handle->getResource()] = $handle;
-        $this->ignoreTimeout = true;
+        $this->firstSelectCall = true;
         return $this;
     }
     
@@ -49,9 +49,11 @@ class CurlMulti implements MultiHandleInterface
         return $this;
     }
     
-    public function execute(&$stillRunning = 0)
+    public function execute()
     {
-        return $this->checkExecuteResult(curl_multi_exec($this->resource, $stillRunning));
+        $stillRunning = 0;
+        while($this->checkExecuteResult(curl_multi_exec($this->resource, $stillRunning)));
+        return true;
     }
     
     public function getHandleResponseContent(ConnectionHandleInterface $handle)
@@ -59,37 +61,51 @@ class CurlMulti implements MultiHandleInterface
         return curl_multi_getcontent($handle->getResource());
     }
     
-    public function select($selectTimeout = 1.0)
+    public function getStillRunningCount()
     {
-        if ($this->ignoreTimeout) {
+        $stillRunning = 0;
+        curl_multi_exec($this->resource, $stillRunning);
+        return $stillRunning;
+    }
+    
+    public function select($timeout = 1.0)
+    {
+        // The first curl_multi_select often times out no matter what, but is usually required for fast transfers
+        if ($this->firstSelectCall) {
             
-            $selectTimeout = 0.001;
-            $this->ignoreTimeout = false;
+            $oldTimeout = $timeout;
+            $timeout = 0.001;
         }
         
-        if(($result = curl_multi_select($this->resource, $selectTimeout)) == -1) {
+        $result = curl_multi_select($this->resource, $timeout);
+        
+        if($result == -1 && $this->firstSelectCall) {
             
             // Perform a usleep if a select returns -1: https://bugs.php.net/bug.php?id=61141
             usleep(150);
+            $stillRunning = 0;
+            curl_multi_exec($this->resource, $stillRunning);
+            $result = curl_multi_select($this->resource, $oldTimeout - $timeout);
+            $this->firstSelectCall = false;
         }
         
         return $result == -1 ? 0 : $result;
     }
     
-    public function getFinishedHandleInformation(&$finishedConnectionCount = 0)
+    public function getFinishedHandles()
     {
-        $info = curl_multi_info_read($this->resource, $finishedConnectionCount);
+        $finishedHandles = array();
         
-        if ($info) {
+        while($info = curl_multi_info_read($this->resource)) {
             
-            $info = new FinishedHandleInformation(
+            $finishedHandles[] = new FinishedHandleInformation(
                 $this->handles[(int)$info['handle']], 
                 $info['result'], 
                 $info['msg']
             );
         }
         
-        return $info;
+        return $finishedHandles;
     }
     
     public function close()
@@ -128,6 +144,6 @@ class CurlMulti implements MultiHandleInterface
     {
         $this->resource = curl_multi_init();
         $this->handles = array();
-        $this->ignoreTimeout = true;
+        $this->firstSelectCall = true;
     }
 }

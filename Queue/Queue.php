@@ -120,29 +120,29 @@ class Queue implements QueueInterface, HandleObserverInterface
 
     protected function queuePendingRequests()
     {
-        foreach ($this->pending as $pending) {
+        foreach ($this->pending as $request) {
             
-            $event = new HandleEvent($this, $pending);
+            $event = new HandleEvent($this, $request);
             $this->config->getEventDispatcher()->dispatch(
                 RequestEvents::PRE_CREATE_HANDLE, 
                 $event
             );
-            $pending = $event->getRequest();
+            $request = $event->getRequest();
             
             if (!($handle = $event->getHandle())) {
                 
-                $handle = $this->config->getHandleFactory()->createHandle($pending);
+                $handle = $this->config->getHandleFactory()->createHandle($request);
             }
             
-            $event = new HandleEvent($this, $pending, $handle);
+            $event = new HandleEvent($this, $request, $handle);
             $this->config->getEventDispatcher()->dispatch(
                 RequestEvents::POST_CREATE_HANDLE, 
                 $event
             );
             $handle = $event->getHandle();
             $handle->setObserver($this);
-            $this->config->getHandleMap()->setRequest($handle, $pending);
-            $this->config->getResponseFactory()->registerHandle($handle, $pending);
+            $this->config->getHandleMap()->setRequest($handle, $request);
+            $this->config->getResponseFactory()->registerHandle($handle, $request);
             $this->config->getMultiHandle()->addHandle($handle);
         }
         
@@ -154,14 +154,11 @@ class Queue implements QueueInterface, HandleObserverInterface
      */
     protected function executeHandles()
     {
-        // The first curl_multi_select often times out no matter what, but is usually required for fast transfers
-        $active = false;
+        $this->config->getMultiHandle()->execute();
         do {
-            while ($this->config->getMultiHandle()->execute($active));
-            
-            $this->processResults();
             $this->config->getMultiHandle()->select();
-        } while ($active);
+            $this->processResults();
+        } while ($this->config->getMultiHandle()->getStillRunningCount());
     }
     
    /**
@@ -169,20 +166,23 @@ class Queue implements QueueInterface, HandleObserverInterface
     */
     protected function processResults()
     {
-        while ($done = $this->config->getMultiHandle()->getFinishedHandleInformation()) {
+        foreach($this->config->getMultiHandle()->getFinishedHandles() as $finished) {
 
-            $handle = $done->getHandle();
+            $handle = $finished->getHandle();
             $this->config->getMultiHandle()->removeHandle($handle);
-            $request = $this->config->getHandleMap()->getRequest($handle);
-            $response = $this->config->getResponseFactory()->createResponse($handle);
             
-            if ($response) {
+            $event = new ResponseEvent(
+                $this, 
+                $this->config->getHandleMap()->getRequest($handle), 
+                $this->config->getResponseFactory()->createResponse($handle)
+            );
+            $this->config->getEventDispatcher()->dispatch(
+                RequestEvents::COMPLETE, 
+                $event
+            );
+            
+            if ($event->getResponse()) {
 
-                $event = new ResponseEvent($this, $request, $response);
-                $this->config->getEventDispatcher()->dispatch(
-                    RequestEvents::COMPLETE, 
-                    $event
-                );
                 $this->responses[] = $event->getResponse();
             }
             

@@ -15,7 +15,7 @@ class ResponseEvent extends RequestEvent
 {
     protected $response;
     
-    public function __construct(QueueInterface $queue, RequestInterface $request, ResponseInterface $response)
+    public function __construct(QueueInterface $queue, RequestInterface $request, ResponseInterface $response = null)
     {
         parent::__construct($queue, $request);
         $this->response = $response;

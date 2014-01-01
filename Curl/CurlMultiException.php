@@ -14,13 +14,13 @@ class CurlMultiException extends \Exception
     {
         $message = 'Unexpected cURL error: ' . $code;
         
-        if (isset($this->multiErrors[$code])) {
+        if (isset(static::$multiErrors[$code])) {
             
             $message = sprintf(
                 "cURL error: %s (%s): cURL message: %s", 
                 $code, 
-                $this->multiErrors[$code][0], 
-                $this->multiErrors[$code][1]
+                static::$multiErrors[$code][0], 
+                static::$multiErrors[$code][1]
             );
         }
         

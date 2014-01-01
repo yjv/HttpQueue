@@ -46,6 +46,18 @@ class FactoryTest extends \PHPUnit_Framework_TestCase
         ), Factory::createMultipleFromCookieHeader('name=value; name2=value=othervalue; dsadsa=asddsa;'));
     }
     
+    public function testCreateCookieHeaderFromMultiple()
+    {
+        $this->assertEquals(
+            'name=value; name2=value=othervalue; dsadsa=asddsa;', 
+            Factory::createCookieHeaderFromMultiple(array(
+                new Cookie('name', 'value'),
+                new Cookie('name2', 'value=othervalue'),
+                new Cookie('dsadsa', 'asddsa')
+            ))
+        );
+    }
+    
     /**
      * @expectedException InvalidArgumentException
      * @expectedExceptionMessage The header sent is malformed

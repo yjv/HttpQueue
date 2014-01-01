@@ -61,4 +61,12 @@ class Factory
             )
         );
     }
+    
+    public static function createCookieHeaderFromMultiple(array $cookies)
+    {
+        return implode('; ', array_map(function(Cookie $cookie)
+        {
+            return sprintf('%s=%s', $cookie->getName(), $cookie->getValue());    
+        }, $cookies)).';';
+    }
 }

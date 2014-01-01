@@ -30,21 +30,6 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
         return $this->read($lengthOfDataToRead);
     }
     
-    public function getPayloadData()
-    {
-        return $this->__toString();
-    }
-    
-    public function setPayloadData($data)
-    {
-        if($this->truncate(0))
-        {
-            return $this->write($data);
-        }
-        
-        return false;
-    }
-    
     public function getContentType()
     {
     }

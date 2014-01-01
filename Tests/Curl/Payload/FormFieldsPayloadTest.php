@@ -25,17 +25,6 @@ class FormFieldsPayloadTest extends \PHPUnit_Framework_TestCase
     
     public function testSetHandleWithCurlHandle()
     {
-        $handle = Mockery::mock('Yjv\HttpQueue\Curl\CurlHandle')
-            ->shouldReceive('setOption')
-            ->once()
-            ->with(CURLOPT_POST, true)
-            ->getMock()
-        ;
-        $this->assertSame($this->payload, $this->payload->setHandle($handle));
-    }
-    
-    public function testGetPayloadData()
-    {
         $this->payload['key'] = array(
             'subkey1' => Mockery::mock('Yjv\HttpQueue\Curl\CurlFileInterface')
                 ->shouldReceive('getCurlValue')
@@ -45,10 +34,19 @@ class FormFieldsPayloadTest extends \PHPUnit_Framework_TestCase
             ,
             'subkey2' => 'value'
         );
-        $this->assertEquals(array(
-            'key[subkey1]' => 'curl_file',
-            'key[subkey2]' => 'value'
-        ), $this->payload->getPayloadData());
+        $handle = Mockery::mock('Yjv\HttpQueue\Curl\CurlHandle')
+            ->shouldReceive('setOptions')
+            ->once()
+            ->with(array(
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => array(
+                    'key[subkey1]' => 'curl_file',
+                    'key[subkey2]' => 'value'
+                )
+            ))
+            ->getMock()
+        ;
+        $this->assertSame($this->payload, $this->payload->setHandle($handle));
     }
 
     public function testContentGetters()

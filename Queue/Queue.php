@@ -73,18 +73,11 @@ class Queue implements QueueInterface, HandleObserverInterface
         return $this;
     }
     
-    public function send(RequestInterface $request = null)
+    public function send()
     {
         $this->sendCalls++;
-        
-        if ($request) {
-            
-            $this->queue($request);
-        }
-
         $this->queuePendingRequests();
         $this->executeHandles();   
-
         $this->sendCalls--;
         
         if (!$this->sendCalls) {
@@ -167,7 +160,7 @@ class Queue implements QueueInterface, HandleObserverInterface
             while ($this->config->getMultiHandle()->execute($active));
             
             $this->processResults();
-            $this->config->getMultiHandle()->select(1);
+            $this->config->getMultiHandle()->select();
         } while ($active);
     }
     
@@ -180,17 +173,17 @@ class Queue implements QueueInterface, HandleObserverInterface
 
             $handle = $done->getHandle();
             $this->config->getMultiHandle()->removeHandle($handle);
-            $handle->close();
             $request = $this->config->getHandleMap()->getRequest($handle);
             $response = $this->config->getResponseFactory()->createResponse($handle);
             
             if ($response) {
 
+                $event = new ResponseEvent($this, $request, $response);
                 $this->config->getEventDispatcher()->dispatch(
                     RequestEvents::COMPLETE, 
-                    new ResponseEvent($this, $request, $response)
+                    $event
                 );
-                $this->responses[] = $response;
+                $this->responses[] = $event->getResponse();
             }
             
             $this->config->getHandleMap()->clear($handle);

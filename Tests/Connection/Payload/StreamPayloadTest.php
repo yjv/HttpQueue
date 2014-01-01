@@ -54,29 +54,4 @@ class StreamPayloadTest extends StreamTest
         $this->assertEquals('part1', $payload->readStream(5));
         $this->assertEquals('part22', $payload->readStream(6));
     }
-    
-    public function testGetPayloadData()
-    {
-        $stream = fopen('php://temp', 'c+');
-        $payload = new StreamPayload($stream);
-        $data = 'part1part22part333';
-        fwrite($stream, $data);
-        $this->assertEquals($data, $payload->getPayloadData());
-    }
-    
-    public function testSetPayloadData()
-    {
-        $stream = fopen('php://temp', 'c+');
-        $payload = new StreamPayload($stream);
-        $data = 'part1part22part333';
-        fwrite($stream, 'xcvxcqweqwewelkjljkjkl');
-        $this->assertEquals(strlen($data), $payload->setPayloadData($data));
-        $this->assertEquals($data, $payload->getPayloadData());
-    }
-    
-    public function testSetPayloadFailsWhenStreamNotTruncatable()
-    {
-        $payload = new StreamPayload(fopen('http://www.google.com', 'r'));
-        $this->assertFalse($payload->setPayloadData('dassadads'));
-    }
 }

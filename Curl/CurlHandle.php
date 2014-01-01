@@ -1,6 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
+use Yjv\HttpQueue\Connection\Payload\DestinationStreamInterface;
 use Yjv\HttpQueue\Connection\HandleObserverInterface;
 use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
 use Yjv\HttpQueue\Connection\Payload\SourceStreamInterface;
@@ -28,7 +29,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function __clone()
     {
-        curl_copy_handle($this->resource);
+        $this->resource = curl_copy_handle($this->resource);
     }
     
     public function getResource()
@@ -66,9 +67,14 @@ class CurlHandle implements ConnectionHandleInterface
         return curl_exec($this->resource);
     }
     
-    public function getLastTransferInfo($option = 0)
+    public function getLastTransferInfo($option = null)
     {
-        return curl_getinfo($this->resource, $option);
+        if (!is_null($option)) {
+            
+            return curl_getinfo($this->resource, $option);
+        }
+        
+        return curl_getinfo($this->resource);
     }
     
     public function close()
@@ -80,19 +86,14 @@ class CurlHandle implements ConnectionHandleInterface
     public function setDestinationPayload(DestinationPayloadInterface $destinationPayload)
     {
         $destinationPayload->setHandle($this);
-        $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationPayload)
-        {
-            if ($destinationPayload instanceof DestinationStreamInterface) {
-
-                return $destinationStream->writeStream($data);
-            } else {
-                
-                static $receivedData = '';
-                $receivedData .= $data;
-                $destinationPayload->setPayloadData($receivedData);
-                return strlen($data);
-            }
-        });
+        
+        if ($destinationPayload instanceof DestinationStreamInterface) {
+            
+            $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationPayload)
+            {
+                return $destinationPayload->writeStream($data);
+            });
+        }
         
         return $this;
     }
@@ -105,14 +106,11 @@ class CurlHandle implements ConnectionHandleInterface
             
             $this->setOptions(array(
                 CURLOPT_UPLOAD => true,
-                CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourceStream)
+                CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourcePayload)
                 {
-                    return $sourceStream->readStream($amountOfDataToRead);
+                    return $sourcePayload->readStream($amountOfDataToRead);
                 }
             ));
-        } else {
-            
-            $this->setOption(CURLOPT_POSTFIELDS, $sourcePayload->getPayloadContent());
         }
         
         return $this;
@@ -138,15 +136,21 @@ class CurlHandle implements ConnectionHandleInterface
             if (isset($options[$callbackOption])) {
                 
                 $internalFunction = $options[$callbackOption];
-                $options[$callbackOption] = function() use ($internalFunction, $curlObject, $callbackOption)
-                {
+                $options[$callbackOption] = function() use (
+                    $internalFunction, 
+                    $curlObject, 
+                    $callbackOption, 
+                    $eventName
+                ) {
                     $args = func_get_args();
                     array_shift($args);
-                    $curlObject->getObserver()->handleEvent(
-                        CurlEvents::getCallbackEvents($callbackOption), 
-                        $curlObject, 
-                        $args
-                    );
+                    if ($curlObject->getObserver()) {
+                        $curlObject->getObserver()->handleEvent(
+                            $eventName, 
+                            $curlObject, 
+                            $args
+                        );
+                    }
                     array_unshift($args, $curlObject);
                     return call_user_func_array($internalFunction, $args);
                 };

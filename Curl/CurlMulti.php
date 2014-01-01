@@ -18,12 +18,20 @@ class CurlMulti implements MultiHandleInterface
     
     public function __construct()
     {
-        $this->resource = curl_multi_init();
+        $this->initialize();
     }
     
     public function __destruct()
     {
-        $this->close();
+        if (is_resource($this->resource)) {
+
+            $this->close();
+        }
+    }
+    
+    public function __clone()
+    {
+        $this->initialize();
     }
     
     public function addHandle(ConnectionHandleInterface $handle)
@@ -114,5 +122,12 @@ class CurlMulti implements MultiHandleInterface
         }
     
         throw new CurlMultiException($executeResultCode);
+    }
+    
+    protected function initialize()
+    {
+        $this->resource = curl_multi_init();
+        $this->handles = array();
+        $this->ignoreTimeout = true;
     }
 }

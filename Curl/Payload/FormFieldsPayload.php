@@ -16,14 +16,12 @@ class FormFieldsPayload extends Query implements SourcePayloadInterface
             throw new \InvalidArgumentException('$handle must be an instance of Yjv\HttpQueue\Curl\CurlHandle');
         }
         
-        $handle->setOption(CURLOPT_POST, true);
+        $handle->setOptions(array(
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => array_map('reset', $this->getSingleLevelArray())
+        ));
         
         return $this;
-    }
-
-    public function getPayloadData()
-    {
-        return array_map('reset', $this->getSingleLevelArray());
     }
     
     public function getContentType()

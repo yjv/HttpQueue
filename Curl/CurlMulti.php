@@ -61,7 +61,7 @@ class CurlMulti implements MultiHandleInterface
         return curl_multi_getcontent($handle->getResource());
     }
     
-    public function getStillRunningCount()
+    public function getExecutingCount()
     {
         $stillRunning = 0;
         curl_multi_exec($this->resource, $stillRunning);

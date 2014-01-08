@@ -13,5 +13,5 @@ interface MultiHandleInterface
     public function getFinishedHandles();
     public function close();
     public function getResource();
-    public function getStillRunningCount();
+    public function getExecutingCount();
 }

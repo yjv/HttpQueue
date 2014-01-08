@@ -219,13 +219,13 @@ class CurlMultiTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($responseContent, $this->handle->getHandleResponseContent($singleHandle));
     }
     
-    public function testGetStillExecutingCount()
+    public function testGetExecutingCount()
     {
         InternalFunctionMocker::mockFunction($this->handle, 'curl_multi_exec', function($resource, &$stillExecutingCount)
         {
             $stillExecutingCount = 4;
         });
-        $this->assertEquals(4, $this->handle->getStillRunningCount());
+        $this->assertEquals(4, $this->handle->getExecutingCount());
     }
     
     public function testGetFinishedHandles()

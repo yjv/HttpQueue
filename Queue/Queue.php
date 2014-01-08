@@ -47,7 +47,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class Queue implements QueueInterface, HandleObserverInterface
 {
-    protected $pending = array();
     protected $responses = array();
     protected $config;
     protected $sendCalls = 0;
@@ -59,15 +58,35 @@ class Queue implements QueueInterface, HandleObserverInterface
     
     public function queue(RequestInterface $request)
     {
-        $this->pending[] = $request;
+        $event = new HandleEvent($this, $request);
+        $this->config->getEventDispatcher()->dispatch(
+            RequestEvents::PRE_CREATE_HANDLE, 
+            $event
+        );
+        $request = $event->getRequest();
+        
+        if (!$handle = $event->getHandle()) {
+            
+            $handle = $this->config->getHandleFactory()->createHandle($request);
+            $event = new HandleEvent($this, $request, $handle);
+            $this->config->getEventDispatcher()->dispatch(
+                RequestEvents::POST_CREATE_HANDLE, 
+                $event
+            );
+            $handle = $event->getHandle();
+        }
+        
+        $this->config->getHandleMap()->setRequest($handle, $request);
+        $this->config->getMultiHandle()->addHandle($handle);
         return $this;
     }
     
     public function unqueue(RequestInterface $request)
     {
-        if(($index = array_search($request, $this->pending)) !== false)
-        {
-            unset($this->pending[$index]);
+        foreach ($this->config->getHandleMap()->getHandles($request) as $handle) {
+            
+            $this->config->getMultiHandle()->removeHandle($handle);
+            $this->config->getHandleMap()->clear($handle);
         }
         
         return $this;
@@ -76,7 +95,7 @@ class Queue implements QueueInterface, HandleObserverInterface
     public function send()
     {
         $this->sendCalls++;
-        $this->queuePendingRequests();
+        $this->registerHandles();
         $this->executeHandles();   
         $this->sendCalls--;
         
@@ -105,10 +124,10 @@ class Queue implements QueueInterface, HandleObserverInterface
         return $this;
     }
     
-    public function handleEvent($name, ConnectionHandleInterface $handle, array $args)
+    public function notifyHandleEvent($name, ConnectionHandleInterface $handle, array $args)
     {
         $this->config->getEventDispatcher()->dispatch(
-            RequestEvents::HANDLE_EVENT.'.'.$name, 
+            sprintf('%s.%s', RequestEvents::HANDLE_EVENT, $name), 
             new HandleObserverEvent(
                 $this, 
                 $this->config->getHandleMap()->getRequest($handle), 
@@ -118,35 +137,24 @@ class Queue implements QueueInterface, HandleObserverInterface
         );
     }
 
-    protected function queuePendingRequests()
+    protected function registerHandles()
     {
-        foreach ($this->pending as $request) {
+        foreach ($this->config->getHandleMap()->getHandles() as $handle) {
             
-            $event = new HandleEvent($this, $request);
-            $this->config->getEventDispatcher()->dispatch(
-                RequestEvents::PRE_CREATE_HANDLE, 
-                $event
-            );
-            $request = $event->getRequest();
+            $request = $this->config->getHandleMap()->getRequest($handle);
             
-            if (!($handle = $event->getHandle())) {
-                
-                $handle = $this->config->getHandleFactory()->createHandle($request);
-            }
-            
-            $event = new HandleEvent($this, $request, $handle);
-            $this->config->getEventDispatcher()->dispatch(
-                RequestEvents::POST_CREATE_HANDLE, 
-                $event
-            );
-            $handle = $event->getHandle();
             $handle->setObserver($this);
-            $this->config->getHandleMap()->setRequest($handle, $request);
-            $this->config->getResponseFactory()->registerHandle($handle, $request);
-            $this->config->getMultiHandle()->addHandle($handle);
+            
+            $this->config->getEventDispatcher()->dispatch(
+                RequestEvents::PRE_SEND, 
+                new HandleEvent($this, $request, $handle)
+            );
+            
+            $this->config->getResponseFactory()->registerHandle(
+                $handle, 
+                $request
+            );
         }
-        
-        $this->pending = array();
     }
     
     /**
@@ -157,14 +165,14 @@ class Queue implements QueueInterface, HandleObserverInterface
         $this->config->getMultiHandle()->execute();
         do {
             $this->config->getMultiHandle()->select();
-            $this->processResults();
-        } while ($this->config->getMultiHandle()->getStillRunningCount());
+            $this->processResponses();
+        } while ($this->config->getMultiHandle()->getExecutingCount());
     }
     
    /**
     * Process any received finished requests
     */
-    protected function processResults()
+    protected function processResponses()
     {
         foreach($this->config->getMultiHandle()->getFinishedHandles() as $finished) {
 

@@ -1,5 +1,5 @@
 <?php
-namespace Yjv\HttpQueue;
+namespace Yjv\HttpQueue\HandleMap;
 
 use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
@@ -9,13 +9,11 @@ use Yjv\HttpQueue\Request\RequestInterface;
 
 class RequestResponseHandleMap
 {
-    protected $requests;
-    protected $responses;
+    protected $pairs;
     
     public function __construct()
     {
-        $this->requests = new \SplObjectStorage();
-        $this->responses = new \SplObjectStorage();
+        $this->pairs = new \SplObjectStorage();
     }
     
     /**
@@ -25,7 +23,7 @@ class RequestResponseHandleMap
      */
     public function getRequest(ConnectionHandleInterface $handle)
     {
-        return isset($this->requests[$handle]) ? $this->requests[$handle] : null;
+        return isset($this->pairs[$handle]) ? $this->pairs[$handle]->getRequest() : null;
     }
     
     /**
@@ -36,9 +34,12 @@ class RequestResponseHandleMap
     {
         $requests = array();
         
-        foreach ($this->requests as $handle) {
+        foreach ($this->pairs as $handle) {
             
-            $requests[] = $this->requests[$handle];
+            if ($this->pairs[$handle]->getRequest()) {
+
+                $requests[] = $this->pairs[$handle]->getRequest();
+            }
         }
         
         return $requests;
@@ -52,7 +53,8 @@ class RequestResponseHandleMap
      */
     public function setRequest(ConnectionHandleInterface $handle, RequestInterface $request)
     {
-        $this->requests[$handle] = $request;
+        $this->initializePair($handle);
+        $this->pairs[$handle]->setRequest($request);
         return $this;
     }
     
@@ -63,7 +65,7 @@ class RequestResponseHandleMap
      */
     public function getResponse(ConnectionHandleInterface $handle)
     {
-        return isset($this->responses[$handle]) ? $this->responses[$handle] : null;
+        return isset($this->pairs[$handle]) ? $this->pairs[$handle]->getResponse() : null;
     }
 
     /**
@@ -74,9 +76,9 @@ class RequestResponseHandleMap
     {
         $responses = array();
     
-        foreach ($this->responses as $handle) {
+        foreach ($this->pairs as $handle) {
     
-            $responses[] = $this->responses[$handle];
+            $responses[] = $this->pairs[$handle]->getResponse();
         }
     
         return $responses;
@@ -90,8 +92,36 @@ class RequestResponseHandleMap
      */
     public function setResponse(ConnectionHandleInterface $handle, ResponseInterface $response)
     {
-        $this->responses[$handle] = $response;
+        $this->initializePair($handle);
+        $this->pairs[$handle]->setResponse($response);
         return $this;
+    }
+    
+    public function getHandles($requestOrResponse = null)
+    {
+        if (!$requestOrResponse) {
+            
+            return iterator_to_array($this->pairs);
+        }
+        
+        if (!$requestOrResponse instanceof RequestInterface && !$requestOrResponse instanceof ResponseInterface) {
+            
+            throw new InvalidArgumentException('$requestOrResponse must be an instance of RequestInterface or ResponseInterface');
+        }
+        
+        $handles = array();
+        
+        foreach ($this->pairs as $handle) {
+            
+            if (
+                $this->pairs[$handle]->getRequest() === $requestOrResponse 
+                || $this->pairs[$handle]->getResponse() === $requestOrResponse
+            ) {
+                $handles[] = $handle;
+            }
+        }
+        
+        return $handles;
     }
     
     /**
@@ -103,13 +133,20 @@ class RequestResponseHandleMap
     {
         if ($handle) {
             
-            unset($this->requests[$handle], $this->responses[$handle]);
+            unset($this->pairs[$handle]);
         } else {
             
-            $this->requests->removeAll($this->requests);
-            $this->responses->removeAll($this->responses);
+            $this->pairs->removeAll($this->pairs);
         }
         
         return $this;
+    }
+    
+    protected function initializePair(ConnectionHandleInterface $handle)
+    {
+        if (!isset($this->pairs[$handle])) {
+            
+            $this->pairs[$handle] = new RequestResponsePair();
+        }
     }
 }

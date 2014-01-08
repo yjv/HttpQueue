@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Tests;
 
-use Yjv\HttpQueue\RequestResponseHandleMap;
+use Yjv\HttpQueue\HandleMap\RequestResponseHandleMap;
 use Mockery;
 
 class RequestResponseHandleMapTest extends \PHPUnit_Framework_TestCase

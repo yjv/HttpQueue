@@ -30,7 +30,7 @@ class CurlResponseFactory implements ResponseFactoryInterface
     
     public function __construct(DestinationStreamFactoryInterface $payloadFactory = null)
     {
-        $this->payloadFactory = $payloadFactory ? $payloadFactory : new TempDestinationStreamFactory();
+        $this->payloadFactory = $payloadFactory ?: new TempDestinationStreamFactory();
         $this->handleMap = new RequestResponseHandleMap();
     }
     

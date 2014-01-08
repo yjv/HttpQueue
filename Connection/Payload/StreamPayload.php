@@ -6,6 +6,9 @@ use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 class StreamPayload extends Stream implements DestinationStreamInterface, SourceStreamInterface
 {
+    protected $contentType;
+    protected $contentLength;
+    
     public function setHandle(ConnectionHandleInterface $handle)
     {
         $this->attemptRewind();
@@ -32,10 +35,24 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
     
     public function getContentType()
     {
+        return $this->contentType;
     }
     
     public function getContentLength()
     {
+        return $this->contentLength;
+    }
+    
+    public function setContentType($contentType)
+    {
+        $this->contentType = $contentType;
+        return $this;
+    }
+    
+    public function setContentLength($contentLength)
+    {
+        $this->contentLength = $contentLength;
+        return $this;
     }
     
     protected function attemptRewind()

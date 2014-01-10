@@ -39,7 +39,10 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setOptions(array $options)
     {
-        $this->options = array_merge($this->options, $options);
+        foreach ($options as $key => $value) {
+            
+            $this->options[$key] = $value;
+        }
         curl_setopt_array($this->resource, $this->wrapCallbacks($options));
         return $this;
     }

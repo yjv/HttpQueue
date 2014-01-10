@@ -31,6 +31,7 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
     
     public function testOptionGettersSetters()
     {
+        define('NAME_OPTION', 354);
         $this->assertEquals(array(), $this->handle->getOptions());
         $this->assertNull($this->handle->getOption('name'));
         $this->assertEquals('default', $this->handle->getOption('name', 'default'));
@@ -50,7 +51,7 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('name' => 'value'), $this->handle->getOptions());
         $this->assertEquals('value', $this->handle->getOption('name'));
         $this->assertEquals('value', $this->handle->getOption('name', 'default'));
-        $options = array('name2' => 'value2', 'name3' => 'value3');
+        $options = array(NAME_OPTION => 'value2', 'name3' => 'value3');
         InternalFunctionMocker::mockFunction($this->handle, 'curl_setopt_array', function(
             $passedResource,
             $passedOptions
@@ -61,10 +62,10 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
         });
         $this->assertSame($this->handle, $this->handle->setOptions($options));
         $this->assertEquals('value', $this->handle->getOption('name'));
-        $this->assertEquals('value2', $this->handle->getOption('name2'));
+        $this->assertEquals('value2', $this->handle->getOption(NAME_OPTION));
         $this->assertEquals(array(
             'name' => 'value',
-            'name2' => 'value2', 
+            NAME_OPTION => 'value2', 
             'name3' => 'value3'
         ), $this->handle->getOptions());
         $options = array('name' => 'value4');
@@ -79,7 +80,7 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->handle, $this->handle->setOptions($options));
         $this->assertEquals(array(
             'name' => 'value4',
-            'name2' => 'value2', 
+            NAME_OPTION => 'value2', 
             'name3' => 'value3'
         ), $this->handle->getOptions());
     }

@@ -85,7 +85,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setDestinationPayload(DestinationPayloadInterface $destinationPayload)
     {
-        $destinationPayload->setHandle($this);
+        $destinationPayload->setSourceHandle($this);
         
         if ($destinationPayload instanceof DestinationStreamInterface) {
             
@@ -100,7 +100,7 @@ class CurlHandle implements ConnectionHandleInterface
     
     public function setSourcePayload(SourcePayloadInterface $sourcePayload)
     {
-        $sourcePayload->setHandle($this);
+        $sourcePayload->setDestinationHandle($this);
         
         if ($sourcePayload instanceof SourceStreamInterface) {
             

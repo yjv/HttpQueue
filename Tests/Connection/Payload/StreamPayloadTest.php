@@ -33,7 +33,7 @@ class StreamPayloadTest extends StreamTest
         $payload = new StreamPayload(fopen('php://temp', 'c+'));
         $payload->writeStream('cxcxzet');
         $data = 'ddasdadasasd';
-        $payload->setHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
+        $payload->setSourceHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
         $payload->writeStream($data);
         $this->assertEquals($data, (string)$payload);
     }
@@ -50,7 +50,7 @@ class StreamPayloadTest extends StreamTest
         $stream = fopen('php://temp', 'c+');
         $payload = new StreamPayload($stream);
         fwrite($stream, 'part1part22part333');
-        $payload->setHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
+        $payload->setDestinationHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
         $this->assertEquals('part1', $payload->readStream(5));
         $this->assertEquals('part22', $payload->readStream(6));
     }

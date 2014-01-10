@@ -9,7 +9,7 @@ use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
 
 class FormFieldsPayload extends Query implements SourcePayloadInterface
 {
-    public function setHandle(ConnectionHandleInterface $handle)
+    public function setDestinationHandle(ConnectionHandleInterface $handle)
     {
         if (!$handle instanceof CurlHandle) {
             

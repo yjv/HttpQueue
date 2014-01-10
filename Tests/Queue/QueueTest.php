@@ -1,6 +1,10 @@
 <?php
 namespace Yjv\HtpQueue\Tests\Queue;
 
+use Yjv\HttpQueue\Request\RequestInterface;
+
+use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+
 use Yjv\HttpQueue\Event\HandleObserverEvent;
 
 use Yjv\HttpQueue\Event\ResponseEvent;
@@ -177,8 +181,6 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         ;
         $request1 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         $response1 = Mockery::mock('Yjv\HttpQueue\Response\ResponseInterface');
-        $event1 = new HandleEvent($this->queue, $request1, $handle1);
-        $responseEvent1 = new ResponseEvent($this->queue, $request1, $response1);
         
         $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface')
             ->shouldReceive('setObserver')
@@ -187,8 +189,6 @@ class QueueTest extends \PHPUnit_Framework_TestCase
             ->getMock()
         ;
         $request2 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
-        $event2 = new HandleEvent($this->queue, $request2, $handle2);
-        $responseEvent2 = new ResponseEvent($this->queue, $request2);
         
         $handle3 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface')
             ->shouldReceive('setObserver')
@@ -198,260 +198,25 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         ;
         $request3 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         $response3 = Mockery::mock('Yjv\HttpQueue\Response\ResponseInterface');
-        $event3 = new HandleEvent($this->queue, $request3, $handle3);
-        $responseEvent3 = new ResponseEvent($this->queue, $request3, $response3);
         
         $this->handleMap
             ->shouldReceive('getHandles')
             ->once()
             ->andReturn(array($handle1, $handle2, $handle3))
             ->getMock()
-            ->shouldReceive('getRequest')
-            ->once()
-            ->with($handle1)
-            ->andReturn($request1)
-            ->getMock()
-            ->shouldReceive('getRequest')
-            ->once()
-            ->with($handle2)
-            ->andReturn($request2)
-            ->getMock()
-            ->shouldReceive('getRequest')
-            ->once()
-            ->with($handle3)
-            ->andReturn($request3)
-            ->getMock()
-        ;
-        $this->dispatcher
-            ->shouldReceive('dispatch')
-            ->once()
-            ->with(RequestEvents::PRE_SEND, Mockery::on(function(HandleEvent $event) use ($testCase, $event1){
-                
-                try {
-                    $testCase->assertSame($event1->getQueue(), $event->getQueue());
-                    $testCase->assertSame($event1->getRequest(), $event->getRequest());
-                    $testCase->assertSame($event1->getHandle(), $event->getHandle());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
-            ->shouldReceive('dispatch')
-            ->once()
-            ->with(RequestEvents::PRE_SEND, Mockery::on(function(HandleEvent $event) use ($testCase, $event2){
-                
-                try {
-                    $testCase->assertSame($event2->getQueue(), $event->getQueue());
-                    $testCase->assertSame($event2->getRequest(), $event->getRequest());
-                    $testCase->assertSame($event2->getHandle(), $event->getHandle());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
-            ->shouldReceive('dispatch')
-            ->once()
-            ->with(RequestEvents::PRE_SEND, Mockery::on(function(HandleEvent $event) use ($testCase, $event3){
-                
-                try {
-                    $testCase->assertSame($event3->getQueue(), $event->getQueue());
-                    $testCase->assertSame($event3->getRequest(), $event->getRequest());
-                    $testCase->assertSame($event3->getHandle(), $event->getHandle());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
         ;
         
-        $this->responseFactory
-            ->shouldReceive('registerHandle')
-            ->once()
-            ->with($handle1, $request1)
-            ->getMock()
-            ->shouldReceive('registerHandle')
-            ->once()
-            ->with($handle2, $request2)
-            ->getMock()
-            ->shouldReceive('registerHandle')
-            ->once()
-            ->with($handle3, $request3)
-            ->getMock()
-        ;
+        $this->setupPresendExpectation($handle1, $request1);
+        $this->setupPresendExpectation($handle2, $request2);
+        $this->setupPresendExpectation($handle3, $request3);
         $this->multiHandle
             ->shouldReceive('execute')
             ->once()
             ->ordered()
             ->getMock()
-            ->shouldReceive('select')
-            ->once()
-            ->ordered()
-            ->getMock()
-            ->shouldReceive('getFinishedHandles')
-            ->once()
-            ->ordered()
-            ->andReturn(array(Mockery::mock()->shouldReceive('getHandle')->andReturn($handle1)->getMock()))
-            ->getMock()
-            ->shouldReceive('removeHandle')
-            ->once()
-            ->ordered()
-            ->with($handle1)
-            ->getMock()
         ;
-        $this->handleMap
-            ->shouldReceive('getRequest')
-            ->once()
-            ->ordered()
-            ->with($handle1)
-            ->andReturn($request1)
-        ;
-        $this->responseFactory
-            ->shouldReceive('createResponse')
-            ->once()
-            ->ordered()
-            ->with($handle1)
-            ->andReturn($response1)
-        ;
-        $this->dispatcher
-            ->shouldReceive('dispatch')
-            ->once()
-            ->ordered()
-            ->with(RequestEvents::COMPLETE, Mockery::on(function(ResponseEvent $event) use ($testCase, $responseEvent1){
-                
-                try {
-                    $testCase->assertSame($responseEvent1->getQueue(), $event->getQueue());
-                    $testCase->assertSame($responseEvent1->getRequest(), $event->getRequest());
-                    $testCase->assertSame($responseEvent1->getResponse(), $event->getResponse());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
-        ;
-        $this->handleMap
-            ->shouldReceive('clear')
-            ->once()
-            ->ordered()
-            ->with($handle1)
-        ;
-        $this->multiHandle
-            ->shouldReceive('getExecutingCount')
-            ->once()
-            ->ordered()
-            ->andReturn(2)
-            ->getMock()
-        ;
-        $this->multiHandle
-            ->shouldReceive('select')
-            ->once()
-            ->ordered()
-            ->getMock()
-            ->shouldReceive('getFinishedHandles')
-            ->once()
-            ->ordered()
-            ->andReturn(array(
-                Mockery::mock()->shouldReceive('getHandle')->andReturn($handle2)->getMock(),
-                Mockery::mock()->shouldReceive('getHandle')->andReturn($handle3)->getMock(),
-            ))
-            ->getMock()
-            ->shouldReceive('removeHandle')
-            ->once()
-            ->ordered()
-            ->with($handle2)
-            ->getMock()
-        ;
-        $this->handleMap
-            ->shouldReceive('getRequest')
-            ->once()
-            ->ordered()
-            ->with($handle2)
-            ->andReturn($request2)
-        ;
-        $this->responseFactory
-            ->shouldReceive('createResponse')
-            ->once()
-            ->ordered()
-            ->with($handle2)
-            ->andReturn(null)
-        ;
-        $this->dispatcher
-            ->shouldReceive('dispatch')
-            ->once()
-            ->ordered()
-            ->with(RequestEvents::COMPLETE, Mockery::on(function(ResponseEvent $event) use ($testCase, $responseEvent2){
-                
-                try {
-                    $testCase->assertSame($responseEvent2->getQueue(), $event->getQueue());
-                    $testCase->assertSame($responseEvent2->getRequest(), $event->getRequest());
-                    $testCase->assertNull($event->getResponse());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
-        ;
-        $this->handleMap
-            ->shouldReceive('clear')
-            ->once()
-            ->ordered()
-            ->with($handle2)
-        ;
-        $this->multiHandle
-            ->shouldReceive('removeHandle')
-            ->once()
-            ->ordered()
-            ->with($handle3)
-            ->getMock()
-        ;
-        $this->handleMap
-            ->shouldReceive('getRequest')
-            ->once()
-            ->ordered()
-            ->with($handle3)
-            ->andReturn($request3)
-        ;
-        $this->responseFactory
-            ->shouldReceive('createResponse')
-            ->once()
-            ->ordered()
-            ->with($handle3)
-            ->andReturn($response3)
-        ;
-        $this->dispatcher
-            ->shouldReceive('dispatch')
-            ->once()
-            ->ordered()
-            ->with(RequestEvents::COMPLETE, Mockery::on(function(ResponseEvent $event) use ($testCase, $responseEvent3){
-                
-                try {
-                    $testCase->assertSame($responseEvent3->getQueue(), $event->getQueue());
-                    $testCase->assertSame($responseEvent3->getRequest(), $event->getRequest());
-                    $testCase->assertSame($responseEvent3->getResponse(), $event->getResponse());
-                    return true;
-                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
-                    return false;
-                }
-            }))
-            ->getMock()
-        ;
-        $this->handleMap
-            ->shouldReceive('clear')
-            ->once()
-            ->ordered()
-            ->with($handle3)
-        ;
-        $this->multiHandle
-            ->shouldReceive('getExecutingCount')
-            ->once()
-            ->ordered()
-            ->andReturn(0)
-            ->getMock()
-        ;
+        $this->setupSelectLoop(array($handle1), array($request1), array($response1), 2);
+        $this->setupSelectLoop(array($handle2, $handle3), array($request2, $request3), array(null, $response3), 0);
         $this->assertSame(array($response1, $response3), $this->queue->send());
     }
     
@@ -513,5 +278,120 @@ class QueueTest extends \PHPUnit_Framework_TestCase
             }))
         ;
         $this->queue->notifyHandleEvent($name, $handle, $args);
+    }
+    
+    protected function setupSelectLoop(array $handles, array $requests, array $responses, $handlesLeft)
+    {
+        $testCase = $this;
+        $this->multiHandle
+            ->shouldReceive('select')
+            ->once()
+            ->ordered()
+            ->getMock()
+            ->shouldReceive('getFinishedHandles')
+            ->once()
+            ->ordered()
+            ->andReturn(array_map(function($handle){
+                return Mockery::mock()->shouldReceive('getHandle')->andReturn($handle)->getMock();
+            }, $handles))
+            ->getMock()
+        ;
+            
+        foreach ($handles as $key => $handle) {
+            
+            $request = $requests[$key];
+            $response = $responses[$key];
+            $responseEvent = new ResponseEvent($this->queue, $request, $response);
+            
+            $this->multiHandle
+                ->shouldReceive('removeHandle')
+                ->once()
+                ->ordered()
+                ->with($handle)
+                ->getMock()
+            ;
+        
+            $this->handleMap
+                ->shouldReceive('getRequest')
+                ->once()
+                ->ordered()
+                ->with($handle)
+                ->andReturn($request)
+            ;
+            $this->responseFactory
+                ->shouldReceive('createResponse')
+                ->once()
+                ->ordered()
+                ->with($handle)
+                ->andReturn($response)
+            ;
+            $this->dispatcher
+                ->shouldReceive('dispatch')
+                ->once()
+                ->ordered()
+                ->with(RequestEvents::COMPLETE, Mockery::on(function(ResponseEvent $event) use ($testCase, $responseEvent){
+                    
+                    try {
+                        $testCase->assertSame($responseEvent->getQueue(), $event->getQueue());
+                        $testCase->assertSame($responseEvent->getRequest(), $event->getRequest());
+                        $testCase->assertSame($responseEvent->getResponse(), $event->getResponse());
+                        return true;
+                    } catch(\PHPUnit_Framework_AssertionFailedError $e) {
+                        return false;
+                    }
+                }))
+                ->getMock()
+            ;
+            $this->handleMap
+                ->shouldReceive('clear')
+                ->once()
+                ->ordered()
+                ->with($handle)
+            ;
+        }
+        $this->multiHandle
+            ->shouldReceive('getExecutingCount')
+            ->once()
+            ->ordered()
+            ->andReturn($handlesLeft)
+            ->getMock()
+        ;
+    }
+    
+    protected function setupPresendExpectation(ConnectionHandleInterface $handle, RequestInterface $request)
+    {
+        $testCase = $this;
+        $this->handleMap
+            ->shouldReceive('getRequest')
+            ->once()
+            ->with($handle)
+            ->andReturn($request)
+            ->getMock()
+        ;
+        
+        $event = new HandleEvent($this->queue, $request, $handle);
+        $this->dispatcher
+            ->shouldReceive('dispatch')
+            ->once()
+            ->with(RequestEvents::PRE_SEND, Mockery::on(function(HandleEvent $passedEvent) use ($testCase, $event){
+                
+                try {
+                    $testCase->assertSame($event->getQueue(), $passedEvent->getQueue());
+                    $testCase->assertSame($event->getRequest(), $passedEvent->getRequest());
+                    $testCase->assertSame($event->getHandle(), $passedEvent->getHandle());
+                    return true;
+                } catch(\PHPUnit_Framework_AssertionFailedError $e) {
+                    return false;
+                }
+            }))
+            ->getMock()
+        ;
+        
+        $this->responseFactory
+            ->shouldReceive('registerHandle')
+            ->once()
+            ->with($handle, $request)
+            ->getMock()
+        ;
     }
 }

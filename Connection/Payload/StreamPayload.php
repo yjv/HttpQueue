@@ -9,7 +9,13 @@ class StreamPayload extends Stream implements DestinationStreamInterface, Source
     protected $contentType;
     protected $contentLength;
     
-    public function setHandle(ConnectionHandleInterface $handle)
+    public function setDestinationHandle(ConnectionHandleInterface $handle)
+    {
+        $this->attemptRewind();
+        return $this;
+    }
+    
+    public function setSourceHandle(ConnectionHandleInterface $handle)
     {
         $this->attemptRewind();
         return $this;

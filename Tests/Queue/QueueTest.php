@@ -3,7 +3,7 @@ namespace Yjv\HtpQueue\Tests\Queue;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Event\HandleObserverEvent;
 
@@ -31,7 +31,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         $this->dispatcher = Mockery::mock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
         $this->handleFactory = Mockery::mock('Yjv\HttpQueue\Queue\HandleFactoryInterface');
         $this->responseFactory = Mockery::mock('Yjv\HttpQueue\Queue\ResponseFactoryInterface');
-        $this->multiHandle = Mockery::mock('Yjv\HttpQueue\Connection\MultiHandleInterface');
+        $this->multiHandle = Mockery::mock('Yjv\HttpQueue\Transport\MultiHandleInterface');
         $this->handleMap = Mockery::mock('Yjv\HttpQueue\HandleMap\RequestResponseHandleMap');
         $this->config = Mockery::mock('Yjv\HttpQueue\Queue\QueueConfigInterface')
             ->shouldReceive('getEventDispatcher')
@@ -58,8 +58,8 @@ class QueueTest extends \PHPUnit_Framework_TestCase
     {
         $testCase = $this;
         $request = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
-        $handle1 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle1 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle2 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $expectedPreEvent = new HandleEvent($this->queue, $request);
         $expectedPostEvent = new HandleEvent($this->queue, $request, $handle1);
         
@@ -105,8 +105,8 @@ class QueueTest extends \PHPUnit_Framework_TestCase
     {
         $testCase = $this;
         $request = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
-        $handle1 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle1 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle2 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $expectedPreEvent = new HandleEvent($this->queue, $request);
         $expectedPostEvent = new HandleEvent($this->queue, $request, $handle1);
         
@@ -138,8 +138,8 @@ class QueueTest extends \PHPUnit_Framework_TestCase
     {
         $testCase = $this;
         $request = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
-        $handle1 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle1 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle2 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         
         $this->handleMap
             ->shouldReceive('getHandles')
@@ -173,7 +173,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
     public function testSend()
     {
         $testCase = $this;
-        $handle1 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface')
+        $handle1 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface')
             ->shouldReceive('setObserver')
             ->once()
             ->with($this->queue)
@@ -182,7 +182,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         $request1 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         $response1 = Mockery::mock('Yjv\HttpQueue\Response\ResponseInterface');
         
-        $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface')
+        $handle2 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface')
             ->shouldReceive('setObserver')
             ->once()
             ->with($this->queue)
@@ -190,7 +190,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         ;
         $request2 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         
-        $handle3 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface')
+        $handle3 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface')
             ->shouldReceive('setObserver')
             ->once()
             ->with($this->queue)
@@ -253,7 +253,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
     {
         $name = 'ewrrewrew';
         $request = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
-        $handle = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $args = array('dasdas', 'tertrter');
         $testCase = $this;
         $handleEvent = new HandleObserverEvent($this->queue, $request, $handle, $args);
@@ -358,7 +358,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase
         ;
     }
     
-    protected function setupPresendExpectation(ConnectionHandleInterface $handle, RequestInterface $request)
+    protected function setupPresendExpectation(HandleInterface $handle, RequestInterface $request)
     {
         $testCase = $this;
         $this->handleMap

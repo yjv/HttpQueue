@@ -7,7 +7,7 @@ use Yjv\HttpQueue\Event\RequestEvent;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 class HandleObserverEvent extends HandleEvent
 {
@@ -17,7 +17,7 @@ class HandleObserverEvent extends HandleEvent
     public function __construct(
         QueueInterface $queue, 
         RequestInterface $request, 
-        ConnectionHandleInterface $handle, 
+        HandleInterface $handle, 
         array $args
     ) {
         parent::__construct($queue, $request, $handle);

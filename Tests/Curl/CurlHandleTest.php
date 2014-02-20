@@ -3,7 +3,7 @@ namespace Yjv\HttpQueue\Tests\Curl;
 
 use Yjv\HttpQueue\Curl\CurlEvents;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Curl\CurlHandle;
 
@@ -228,7 +228,7 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
         
         $this->handle->setOptions($options);
         
-        $observer = Mockery::mock('Yjv\HttpQueue\Connection\HandleObserverInterface');
+        $observer = Mockery::mock('Yjv\HttpQueue\Transport\HandleObserverInterface');
         $this->assertSame($this->handle, $this->handle->setObserver($observer));
         $this->assertSame($observer, $this->handle->getObserver());
         
@@ -260,24 +260,24 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
         $this->handle->setOptions($options);
     }
     
-    public function testSetSourcePayloadWithNonStream()
+    public function testsetPayloadSourceWithNonStream()
     {
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface')
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface')
             ->shouldReceive('setDestinationHandle')
             ->once()
             ->with($this->handle)
             ->getMock()
         ;
-        $this->assertSame($this->handle, $this->handle->setSourcePayload($payload));
+        $this->assertSame($this->handle, $this->handle->setPayloadSource($payload));
     }
     
-    public function testSetSourcePayloadWithStream()
+    public function testsetPayloadSourceWithStream()
     {
         $data = 'stream_data';
         $amountToRead = rand(1, 1e6);
         $testCase = $this;
         $handle = $this->handle;
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\SourceStreamInterface')
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\StreamSourceInterface')
             ->shouldReceive('readStream')
             ->once()
             ->with($amountToRead)
@@ -297,26 +297,26 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
             $testCase->assertTrue($options[CURLOPT_UPLOAD]);
             $testCase->assertEquals($data, $options[CURLOPT_READFUNCTION]($handle, 2, $amountToRead));
         });
-        $this->assertSame($this->handle, $this->handle->setSourcePayload($payload));
+        $this->assertSame($this->handle, $this->handle->setPayloadSource($payload));
     }
     
-    public function testSetDestinationPayloadWithNonStream()
+    public function testsetPayloadDestinationWithNonStream()
     {
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface')
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface')
             ->shouldReceive('setSourceHandle')
             ->once()
             ->with($this->handle)
             ->getMock()
         ;
-        $this->assertSame($this->handle, $this->handle->setDestinationPayload($payload));
+        $this->assertSame($this->handle, $this->handle->setPayloadDestination($payload));
     }
     
-    public function testSetDestinationPayloadWithStream()
+    public function testsetPayloadDestinationWithStream()
     {
         $data = 'stream_data';
         $testCase = $this;
         $handle = $this->handle;
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\DestinationStreamInterface')
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\StreamDestinationInterface')
             ->shouldReceive('writeStream')
             ->once()
             ->with($data)
@@ -336,7 +336,7 @@ class CurlHandleTest extends \PHPUnit_Framework_TestCase
             $testCase->assertEquals(CURLOPT_WRITEFUNCTION, $name);
             $testCase->assertEquals(strlen($data), $value($handle, $data));
         });
-        $this->assertSame($this->handle, $this->handle->setDestinationPayload($payload));
+        $this->assertSame($this->handle, $this->handle->setPayloadDestination($payload));
     }
     
     public function tearDown()

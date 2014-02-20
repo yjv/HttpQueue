@@ -1,13 +1,13 @@
 <?php
 namespace Yjv\HttpQueue\Tests\Curl;
 
-use Yjv\HttpQueue\Connection\FinishedHandleInformation;
+use Yjv\HttpQueue\Transport\FinishedHandleInformation;
 
 use Yjv\HttpQueue\Curl\CurlMulti;
 
 use Yjv\HttpQueue\Curl\CurlEvents;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Curl\CurlHandle;
 

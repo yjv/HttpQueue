@@ -27,7 +27,7 @@ interface RequestInterface
     public function getUrl();
     
     /**
-     * @return \Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface
+     * @return \Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface
      */
     public function getBody();
     

@@ -33,7 +33,7 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->response, $this->response->setHeaders($headers));
         $this->assertSame($headers, $this->response->getHeaders());
         $this->assertNull($this->response->getBody());
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface');
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface');
         $this->assertSame($this->response, $this->response->setBody($payload));
         $this->assertSame($payload, $this->response->getBody());
     }
@@ -46,7 +46,7 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
             ->andReturn('headers')
             ->getMock()
         ;
-        $body = Mockery::mock('Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface')
+        $body = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface')
             ->shouldReceive('__toString')
             ->once()
             ->andReturn('body')

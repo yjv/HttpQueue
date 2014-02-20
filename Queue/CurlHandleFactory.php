@@ -3,11 +3,11 @@ namespace Yjv\HttpQueue\Queue;
 
 use Yjv\HttpQueue\Request\RequestHeaderBag;
 
-use Yjv\HttpQueue\Connection\PayloadInterface;
+use Yjv\HttpQueue\Transport\PayloadHolderInterface;
 
-use Yjv\HttpQueue\Payload\SourcePayloadInterface;
+use Yjv\HttpQueue\Payload\PayloadSourceInterface;
 
-use Yjv\HttpQueue\Payload\SourceStreamInterface;
+use Yjv\HttpQueue\Payload\StreamSourceInterface;
 
 use Yjv\HttpQueue\Curl\CurlHandle;
 
@@ -65,10 +65,10 @@ class CurlHandleFactory implements HandleFactoryInterface
             $curlOptions[CURLOPT_NOBODY] = true;
         }
 
-        if ($request->getBody() instanceof SourcePayloadInterface) {
+        if ($request->getBody() instanceof PayloadSourceInterface) {
              
             $payload = $request->getBody();
-            $handle->setSourcePayload($payload);
+            $handle->setPayloadSource($payload);
             
             if ($payload->getContentType()) {
 

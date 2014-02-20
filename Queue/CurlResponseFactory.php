@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
-use Yjv\HttpQueue\Connection\DestinationStreamInterface;
+use Yjv\HttpQueue\Transport\StreamDestinationInterface;
 
 use Yjv\HttpQueue\RequestResponseHandleMap;
 
@@ -21,7 +21,7 @@ use Yjv\HttpQueue\Request\RequestEvents;
 
 use Yjv\HttpQueue\Response\Response;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 class CurlResponseFactory implements ResponseFactoryInterface
 {
@@ -34,14 +34,14 @@ class CurlResponseFactory implements ResponseFactoryInterface
         $this->handleMap = new RequestResponseHandleMap();
     }
     
-    public function registerHandle(ConnectionHandleInterface $handle, RequestInterface $request)
+    public function registerHandle(HandleInterface $handle, RequestInterface $request)
     {
         $this->handleMap->setRequest($handle, $request);
         $handle->setOption(CURLOPT_HEADERFUNCTION, array($this, 'writeHeader'));
         return $this;
     }
     
-    public function createResponse(ConnectionHandleInterface $handle)
+    public function createResponse(HandleInterface $handle)
     {
         $response = $this->handleMap->getResponse($handle);
         $this->handleMap->clear($handle);
@@ -92,7 +92,7 @@ class CurlResponseFactory implements ResponseFactoryInterface
                     $response
                 );
                 
-                $handle->setDestinationPayload($body);
+                $handle->setPayloadDestination($body);
                 $response->setBody($body);
             }
             

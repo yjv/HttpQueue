@@ -49,7 +49,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->request, $this->request->setHandleOption('handle_name', 'handle_value'));
         $this->assertEquals('handle_value', $this->request->getHandleOption('handle_name'));
         $this->assertEquals(array('handle_name' => 'handle_value'), $this->request->getHandleOptions());
-        $payload = Mockery::mock('Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface');
+        $payload = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface');
         $this->assertSame($this->request, $this->request->setBody($payload));
         $this->assertSame($payload, $this->request->getBody());
     }
@@ -62,7 +62,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
             ->andReturn('headers')
             ->getMock()
         ;
-        $body = Mockery::mock('Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface')
+        $body = Mockery::mock('Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface')
             ->shouldReceive('__toString')
             ->once()
             ->andReturn('body')

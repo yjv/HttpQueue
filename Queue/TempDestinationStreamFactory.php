@@ -1,18 +1,18 @@
 <?php
 namespace Yjv\HttpQueue\Queue;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Response\ResponseInterface;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Connection\Payload\StreamPayload;
+use Yjv\HttpQueue\Transport\Payload\StreamPayloadHolder;
 
 class TempDestinationStreamFactory implements DestinationPayloadFactoryInterface
 {
-    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response)
+    public function getDestinationPayload(HandleInterface $handle, RequestInterface $request, ResponseInterface $response)
     {
-        return new StreamPayload(fopen('php://temp', 'r+'));
+        return new StreamPayloadHolder(fopen('php://temp', 'r+'));
     }
 }

@@ -11,14 +11,14 @@ class HandleEventTest extends RequestEventTest
     public function setUp()
     {
         parent::setUp();
-        $this->handle = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $this->handle = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $this->event = new HandleEvent($this->queue, $this->request, $this->handle);
     }
     
     public function testGettersSetters()
     {
         parent::testGettersSetters();
-        $handle = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $this->assertSame($this->handle, $this->event->getHandle());
         $this->assertSame($this->event, $this->event->setHandle($handle));
         $this->assertSame($handle, $this->event->getHandle());

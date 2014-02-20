@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\HandleMap;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Response\ResponseInterface;
 
@@ -21,7 +21,7 @@ class RequestResponseHandleMap
      * @param ConnectionInterface $handle
      * @return \Yjv\HttpQueue\Request\RequestInterface
      */
-    public function getRequest(ConnectionHandleInterface $handle)
+    public function getRequest(HandleInterface $handle)
     {
         return isset($this->pairs[$handle]) ? $this->pairs[$handle]->getRequest() : null;
     }
@@ -51,7 +51,7 @@ class RequestResponseHandleMap
      * @param RequestInterface $request
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function setRequest(ConnectionHandleInterface $handle, RequestInterface $request)
+    public function setRequest(HandleInterface $handle, RequestInterface $request)
     {
         $this->initializePair($handle);
         $this->pairs[$handle]->setRequest($request);
@@ -63,7 +63,7 @@ class RequestResponseHandleMap
      * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\Response\ResponseInterface
      */
-    public function getResponse(ConnectionHandleInterface $handle)
+    public function getResponse(HandleInterface $handle)
     {
         return isset($this->pairs[$handle]) ? $this->pairs[$handle]->getResponse() : null;
     }
@@ -90,7 +90,7 @@ class RequestResponseHandleMap
      * @param ResponseInterface $response
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function setResponse(ConnectionHandleInterface $handle, ResponseInterface $response)
+    public function setResponse(HandleInterface $handle, ResponseInterface $response)
     {
         $this->initializePair($handle);
         $this->pairs[$handle]->setResponse($response);
@@ -129,7 +129,7 @@ class RequestResponseHandleMap
      * @param CurlHandleInterface $handle
      * @return \Yjv\HttpQueue\RequestResponseHandleMap
      */
-    public function clear(ConnectionHandleInterface $handle = null)
+    public function clear(HandleInterface $handle = null)
     {
         if ($handle) {
             
@@ -142,7 +142,7 @@ class RequestResponseHandleMap
         return $this;
     }
     
-    protected function initializePair(ConnectionHandleInterface $handle)
+    protected function initializePair(HandleInterface $handle)
     {
         if (!isset($this->pairs[$handle])) {
             

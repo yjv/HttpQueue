@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Tests\Queue;
 
-use Yjv\HttpQueue\Connection\Payload\StreamPayload;
+use Yjv\HttpQueue\Transport\Payload\StreamPayloadHolder;
 use Mockery;
 use Yjv\HttpQueue\Queue\TempDestinationStreamFactory;
 
@@ -17,11 +17,11 @@ class TempDestinationStreamFactoryTest extends \PHPUnit_Framework_TestCase
     public function testGetDestinationPayload()
     {
         $payload = $this->factory->getDestinationPayload(
-            Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'), 
+            Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface'),
             Mockery::mock('Yjv\HttpQueue\Request\RequestInterface'), 
             Mockery::mock('Yjv\HttpQueue\Response\ResponseInterface')
         );
-        $this->assertInstanceOf('Yjv\HttpQueue\Connection\Payload\StreamPayload', $payload);
+        $this->assertInstanceOf('Yjv\HttpQueue\Transport\Payload\StreamPayloadHolder', $payload);
         $this->assertEquals('TEMP', $payload->getStreamType());
     }
 }

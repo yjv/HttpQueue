@@ -1,7 +1,7 @@
 <?php
 namespace Yjv\HttpQueue\Tests\Connection;
 
-use Yjv\HttpQueue\Connection\FinishedHandleInformation;
+use Yjv\HttpQueue\Transport\FinishedHandleInformation;
 
 use Mockery;
 
@@ -9,7 +9,7 @@ class FinishedHandleInformationTest extends \PHPUnit_Framework_TestCase
 {
     public function testGetters()
     {
-        $handle = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $result = 'result';
         $message = 'message';
         $finishedHandleInformation = new FinishedHandleInformation($handle, $result, $message);

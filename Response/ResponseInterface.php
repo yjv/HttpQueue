@@ -19,7 +19,7 @@ interface ResponseInterface
     public function getHeaders();
     
     /**
-     * @return \Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface
+     * @return \Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface
      */
     public function getBody();
 }

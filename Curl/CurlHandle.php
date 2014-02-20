@@ -1,14 +1,14 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-use Yjv\HttpQueue\Connection\Payload\DestinationStreamInterface;
-use Yjv\HttpQueue\Connection\HandleObserverInterface;
-use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
-use Yjv\HttpQueue\Connection\Payload\SourceStreamInterface;
-use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\Payload\StreamDestinationInterface;
+use Yjv\HttpQueue\Transport\HandleObserverInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface;
+use Yjv\HttpQueue\Transport\Payload\StreamSourceInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
-class CurlHandle implements ConnectionHandleInterface
+class CurlHandle implements HandleInterface
 {
     protected $resource;
     protected $options = array();
@@ -86,35 +86,29 @@ class CurlHandle implements ConnectionHandleInterface
         return $this;
     }
     
-    public function setDestinationPayload(DestinationPayloadInterface $destinationPayload)
+    public function setStreamDestination(StreamDestinationInterface $streamDestination)
     {
-        $destinationPayload->setSourceHandle($this);
+        $streamDestination->setSourceHandle($this);
         
-        if ($destinationPayload instanceof DestinationStreamInterface) {
-            
-            $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($destinationPayload)
-            {
-                return $destinationPayload->writeStream($data);
-            });
-        }
+        $this->setOption(CURLOPT_WRITEFUNCTION, function (CurlHandle $handle, $data) use ($streamDestination)
+        {
+            return $streamDestination->writeStream($data);
+        });
         
         return $this;
     }
     
-    public function setSourcePayload(SourcePayloadInterface $sourcePayload)
+    public function setStreamSource(StreamSourceInterface $streamSource)
     {
-        $sourcePayload->setDestinationHandle($this);
+        $streamSource->setDestinationHandle($this);
         
-        if ($sourcePayload instanceof SourceStreamInterface) {
-            
-            $this->setOptions(array(
-                CURLOPT_UPLOAD => true,
-                CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($sourcePayload)
-                {
-                    return $sourcePayload->readStream($amountOfDataToRead);
-                }
-            ));
-        }
+        $this->setOptions(array(
+            CURLOPT_UPLOAD => true,
+            CURLOPT_READFUNCTION => function (CurlHandle $handle, $fd, $amountOfDataToRead) use ($streamSource)
+            {
+                return $streamSource->readStream($amountOfDataToRead);
+            }
+        ));
         
         return $this;
     }

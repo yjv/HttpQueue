@@ -1,11 +1,11 @@
 <?php
-namespace Yjv\HttpQueue\Connection;
+namespace Yjv\HttpQueue\Transport;
 
-use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface;
 
-use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface;
 
-interface ConnectionHandleInterface
+interface HandleInterface
 {
     public function getResource();
     public function setOptions(array $options);
@@ -15,7 +15,7 @@ interface ConnectionHandleInterface
     public function execute();
     public function getLastTransferInfo($option = null);
     public function close();
-    public function setSourcePayload(SourcePayloadInterface $sourcePayload);
-    public function setDestinationPayload(DestinationPayloadInterface $destinationPayload);
+    public function setStreamSource(StreamSourceInterface $sourceStream);
+    public function setStreamDestination(StreamDestinationInterface $destinationStream);
     public function setObserver(HandleObserverInterface $observer);
 }

@@ -24,7 +24,7 @@ interface QueueConfigInterface
     public function getHandleMap();
     
     /**
-     * @return \Yjv\HttpQueue\Connection\MultiHandleInterface
+     * @return \Yjv\HttpQueue\Transport\HandlePoolInterface
      */
     public function getMultiHandle();
 }

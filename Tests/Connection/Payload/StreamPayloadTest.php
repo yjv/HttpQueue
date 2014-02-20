@@ -3,17 +3,17 @@ namespace Yjv\HttpQueue\Tests\Connection\Payload;
 
 use Yjv\HttpQueue\Tests\Stream\StreamTest;
 
-use Yjv\HttpQueue\Connection\Payload\StreamPayload;
+use Yjv\HttpQueue\Transport\Payload\StreamPayloadHolder;
 
 use Mockery;
 
-class StreamPayloadTest extends StreamTest
+class StreamPayloadHolderTest extends StreamTest
 {
     public function testGetSize()
     {
         $size = filesize(__DIR__ . '/../../bootstrap.php');
         $handle = fopen(__DIR__ . '/../../bootstrap.php', 'r');
-        $stream = new StreamPayload($handle);
+        $stream = new StreamPayloadHolder($handle);
         $this->assertEquals($handle, $stream->getStream());
         $this->assertEquals($size, $stream->getSize());
         $this->assertEquals($size, $stream->getSize());
@@ -30,17 +30,17 @@ class StreamPayloadTest extends StreamTest
     
     public function testStreamWriting()
     {
-        $payload = new StreamPayload(fopen('php://temp', 'c+'));
+        $payload = new StreamPayloadHolder(fopen('php://temp', 'c+'));
         $payload->writeStream('cxcxzet');
         $data = 'ddasdadasasd';
-        $payload->setSourceHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
+        $payload->setSourceHandle(Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface'));
         $payload->writeStream($data);
         $this->assertEquals($data, (string)$payload);
     }
     
     public function testContentGetters()
     {
-        $payload = new StreamPayload(fopen('php://temp', 'c+'));
+        $payload = new StreamPayloadHolder(fopen('php://temp', 'c+'));
         $this->assertNull($payload->getContentType());
         $this->assertNull($payload->getContentLength());
     }
@@ -48,9 +48,9 @@ class StreamPayloadTest extends StreamTest
     public function testReadStream()
     {
         $stream = fopen('php://temp', 'c+');
-        $payload = new StreamPayload($stream);
+        $payload = new StreamPayloadHolder($stream);
         fwrite($stream, 'part1part22part333');
-        $payload->setDestinationHandle(Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface'));
+        $payload->setDestinationHandle(Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface'));
         $this->assertEquals('part1', $payload->readStream(5));
         $this->assertEquals('part22', $payload->readStream(6));
     }

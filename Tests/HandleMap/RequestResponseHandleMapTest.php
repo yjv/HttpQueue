@@ -15,10 +15,10 @@ class RequestResponseHandleMapTest extends \PHPUnit_Framework_TestCase
     
     public function testGettersSetters()
     {
-        $handle1 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle2 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle3 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
-        $handle4 = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle1 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle2 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle3 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
+        $handle4 = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $request1 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         $request2 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');
         $request3 = Mockery::mock('Yjv\HttpQueue\Request\RequestInterface');

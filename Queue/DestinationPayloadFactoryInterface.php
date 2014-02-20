@@ -5,9 +5,9 @@ use Yjv\HttpQueue\Response\ResponseInterface;
 
 use Yjv\HttpQueue\Request\RequestInterface;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 interface DestinationPayloadFactoryInterface
 {
-    public function getDestinationPayload(ConnectionHandleInterface $handle, RequestInterface $request, ResponseInterface $response);
+    public function getDestinationPayload(HandleInterface $handle, RequestInterface $request, ResponseInterface $response);
 }

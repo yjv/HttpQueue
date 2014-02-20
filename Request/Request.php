@@ -2,7 +2,7 @@
 namespace Yjv\HttpQueue\Request;
 
 use Yjv\HttpQueue\Header\HeaderBag;
-use Yjv\HttpQueue\Connection\Payload\PayloadInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadHolderInterface;
 use Yjv\HttpQueue\Uri\Factory as UriFactory;
 
 class Request implements RequestInterface
@@ -101,7 +101,7 @@ class Request implements RequestInterface
         return $this->body;
     }
     
-    public function setBody(PayloadInterface $body)
+    public function setBody(PayloadHolderInterface $body)
     {
         $this->body = $body;
         return $this;

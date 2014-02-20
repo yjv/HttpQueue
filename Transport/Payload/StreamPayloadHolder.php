@@ -1,21 +1,21 @@
 <?php
-namespace Yjv\HttpQueue\Connection\Payload;
+namespace Yjv\HttpQueue\Transport\Payload;
 
 use Yjv\HttpQueue\Stream\Stream;
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
-class StreamPayload extends Stream implements DestinationStreamInterface, SourceStreamInterface
+class StreamPayloadHolder extends Stream implements StreamDestinationInterface, StreamSourceInterface
 {
     protected $contentType;
     protected $contentLength;
     
-    public function setDestinationHandle(ConnectionHandleInterface $handle)
+    public function setDestinationHandle(HandleInterface $handle)
     {
         $this->attemptRewind();
         return $this;
     }
     
-    public function setSourceHandle(ConnectionHandleInterface $handle)
+    public function setSourceHandle(HandleInterface $handle)
     {
         $this->attemptRewind();
         return $this;

@@ -1,13 +1,13 @@
 <?php
 namespace Yjv\HttpQueue\Curl;
 
-use Yjv\HttpQueue\Connection\FinishedHandleInformation;
+use Yjv\HttpQueue\Transport\FinishedHandleInformation;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
-use Yjv\HttpQueue\Connection\MultiHandleInterface;
+use Yjv\HttpQueue\Transport\HandlePoolInterface;
 
-class CurlMulti implements MultiHandleInterface
+class CurlMulti implements HandlePoolInterface
 {
     const STATUS_OK = CURLM_OK;
     const STATUS_PERFORMING = CURLM_CALL_MULTI_PERFORM;
@@ -34,7 +34,7 @@ class CurlMulti implements MultiHandleInterface
         $this->initialize();
     }
     
-    public function addHandle(ConnectionHandleInterface $handle)
+    public function queueHandle(HandleInterface $handle)
     {
         curl_multi_add_handle($this->resource, $handle->getResource());
         $this->handles[(int)$handle->getResource()] = $handle;
@@ -42,7 +42,7 @@ class CurlMulti implements MultiHandleInterface
         return $this;
     }
     
-    public function removeHandle(ConnectionHandleInterface $handle)
+    public function unqueueHandle(HandleInterface $handle)
     {
         curl_multi_remove_handle($this->resource, $handle->getResource());
         unset($this->handles[(int)$handle->getResource()]);
@@ -56,7 +56,7 @@ class CurlMulti implements MultiHandleInterface
         return true;
     }
     
-    public function getHandleResponseContent(ConnectionHandleInterface $handle)
+    public function getHandleResponseContent(HandleInterface $handle)
     {
         return curl_multi_getcontent($handle->getResource());
     }
@@ -98,11 +98,7 @@ class CurlMulti implements MultiHandleInterface
         
         while($info = curl_multi_info_read($this->resource)) {
             
-            $finishedHandles[] = new FinishedHandleInformation(
-                $this->handles[(int)$info['handle']], 
-                $info['result'], 
-                $info['msg']
-            );
+            $finishedHandles[] = $this->handles[(int)$info['handle']];
         }
         
         return $finishedHandles;
@@ -118,7 +114,12 @@ class CurlMulti implements MultiHandleInterface
     {
         return $this->resource;
     }
-    
+
+    public function createHandle(array $options = array())
+    {
+        return new CurlHandle();
+    }
+
     /**
      * Throw an exception for a cURL multi response if needed
      *

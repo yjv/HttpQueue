@@ -3,13 +3,13 @@ namespace Yjv\HttpQueue\Curl\Payload;
 
 use Yjv\HttpQueue\Curl\CurlFileInterface;
 use Yjv\HttpQueue\Curl\CurlHandle;
-use Yjv\HttpQueue\Connection\Payload\SourcePayloadInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadSourceInterface;
 use Yjv\HttpQueue\Uri\Query;
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
-class FormFieldsPayload extends Query implements SourcePayloadInterface
+class FormFieldsPayload extends Query implements PayloadSourceInterface
 {
-    public function setDestinationHandle(ConnectionHandleInterface $handle)
+    public function setDestinationHandle(HandleInterface $handle)
     {
         if (!$handle instanceof CurlHandle) {
             

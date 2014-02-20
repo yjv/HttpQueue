@@ -11,9 +11,9 @@ use Yjv\HttpQueue\Event\CreateHandleEvent;
 
 use Yjv\HttpQueue\Event\RequestHandleEvent;
 
-use Yjv\HttpQueue\Connection\HandleObserverInterface;
+use Yjv\HttpQueue\Transport\HandleObserverInterface;
 
-use Yjv\HttpQueue\Connection\ConnectionHandleInterface;
+use Yjv\HttpQueue\Transport\HandleInterface;
 
 use Yjv\HttpQueue\Connnection\MultiConnectionInterface;
 
@@ -77,7 +77,7 @@ class Queue implements QueueInterface, HandleObserverInterface
         }
         
         $this->config->getHandleMap()->setRequest($handle, $request);
-        $this->config->getMultiHandle()->addHandle($handle);
+        $this->config->getMultiHandle()->queueHandle($handle);
         return $this;
     }
     
@@ -85,7 +85,7 @@ class Queue implements QueueInterface, HandleObserverInterface
     {
         foreach ($this->config->getHandleMap()->getHandles($request) as $handle) {
             
-            $this->config->getMultiHandle()->removeHandle($handle);
+            $this->config->getMultiHandle()->unqueueHandle($handle);
             $this->config->getHandleMap()->clear($handle);
         }
         
@@ -124,7 +124,7 @@ class Queue implements QueueInterface, HandleObserverInterface
         return $this;
     }
     
-    public function notifyHandleEvent($name, ConnectionHandleInterface $handle, array $args)
+    public function notifyHandleEvent($name, HandleInterface $handle, array $args)
     {
         $this->config->getEventDispatcher()->dispatch(
             sprintf('%s.%s', RequestEvents::HANDLE_EVENT, $name), 
@@ -174,10 +174,9 @@ class Queue implements QueueInterface, HandleObserverInterface
     */
     protected function processResponses()
     {
-        foreach($this->config->getMultiHandle()->getFinishedHandles() as $finished) {
+        foreach($this->config->getMultiHandle()->getFinishedHandles() as $handle) {
 
-            $handle = $finished->getHandle();
-            $this->config->getMultiHandle()->removeHandle($handle);
+            $this->config->getMultiHandle()->unqueueHandle($handle);
             
             $event = new ResponseEvent(
                 $this, 

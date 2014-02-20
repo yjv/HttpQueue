@@ -3,7 +3,7 @@ namespace Yjv\HttpQueue\Response;
 
 use Yjv\HttpQueue\Header\HeaderBag;
 
-use Yjv\HttpQueue\Connection\Payload\DestinationPayloadInterface;
+use Yjv\HttpQueue\Transport\Payload\PayloadDestinationInterface;
 
 class Response implements ResponseInterface
 {
@@ -142,7 +142,7 @@ class Response implements ResponseInterface
         return $this->body;
     }
     
-    public function setBody(DestinationPayloadInterface $body)
+    public function setBody(PayloadDestinationInterface $body)
     {
         $this->body = $body;
         return $this;

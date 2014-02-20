@@ -19,7 +19,7 @@ class FormFieldsPayloadTest extends \PHPUnit_Framework_TestCase
      */
     public function testSetHandleWithNonCurlHandle()
     {
-        $handle = Mockery::mock('Yjv\HttpQueue\Connection\ConnectionHandleInterface');
+        $handle = Mockery::mock('Yjv\HttpQueue\Transport\HandleInterface');
         $this->payload->setDestinationHandle($handle);
     }
     
